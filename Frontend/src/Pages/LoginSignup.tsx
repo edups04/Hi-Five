@@ -1,6 +1,7 @@
 import { useState } from "react";
 import logo from "../assets/Hi-five.png";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 
 
 const EmailIcon = () => (
@@ -41,6 +42,7 @@ export default function AuthPage() {
   const [username, setUsername] = useState("");
   const navigate = useNavigate();
 
+  
   const handleSubmit = async () => {
     const url =
       tab === "login"
@@ -196,10 +198,16 @@ export default function AuthPage() {
               <div style={styles.dividerLine} />
             </div>
 
-            <button style={styles.googleBtn} className="google-btn">
-              <GoogleIcon />
-              <span>Google</span>
-            </button>
+          <div style={styles.googleBtnWrap}>
+            <GoogleLogin
+              onSuccess={(credentialResponse) => {
+                console.log(credentialResponse);
+                localStorage.setItem("user", JSON.stringify(credentialResponse));
+                navigate("/home");
+              }}
+              onError={() => console.log("Login Failed")}
+            />
+          </div>
 
             <p style={styles.backText}>
               <button style={styles.backBtn} className="forgot-btn" onClick={() => navigate("/")}>
@@ -411,17 +419,6 @@ const styles: Record<string, React.CSSProperties> = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "10px",
-    background: "#fff",
-    border: "1.5px solid #E5D0C0",
-    borderRadius: "10px",
-    padding: "11px",
-    fontSize: "14px",
-    fontWeight: 600,
-    cursor: "pointer",
-    color: "#3B1A00",
-    fontFamily: "'Georgia', serif",
-    transition: "border-color 0.2s ease, transform 0.15s ease",
   },
   backText: {
     textAlign: "center",

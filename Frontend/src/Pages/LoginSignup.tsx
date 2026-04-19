@@ -1,8 +1,7 @@
 import { useState } from "react";
 import logo from "../assets/Hi-five.png";
 import { useNavigate } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
-
+import axios from "axios";
 
 const EmailIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -43,53 +42,29 @@ export default function AuthPage() {
   const navigate = useNavigate();
 
   
-  const handleSubmit = async () => {
-    const url =
-      tab === "login"
-        ? "http://localhost/hi-five/login.php"
-        : "http://localhost/hi-five/signup.php";
+const handleSubmit = (e) => {
+  e.preventDefault();
 
-    const payload =
-      tab === "login"
-        ? { email, password }
-        : { username, email, password };
+  if (tab === "signup") {
+    axios.post('http://localhost:3000/signup', { username, email, password })
+    .then(result => {
+      console.log(result);
+      setTab("login");
+    })
+    .catch(error => console.log(error));
 
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        if (tab === "login") {
-          localStorage.setItem("user", JSON.stringify({
-            id: data.id,
-            username: data.username,
-            email: data.email
-          }));
-        }
-        setEmail("");
-        setPassword("");
-        setUsername("");
-        alert(data.message);
+  } else {
+    axios.post('http://localhost:3000/login', { email, password })
+    .then(result => {
+      console.log(result);
+      if (result.data === "Success") {
+        localStorage.setItem("user", JSON.stringify(result.data));
         navigate("/home");
-      } else {
-        setEmail("");
-        setPassword("");
-        setUsername("");
-        alert(data.message);
-        navigate("/auth");      
+      }
+    })
+    .catch(error => console.log(error));
   }
-    } catch (err) {
-      console.error(err);
-      alert("Server error");
-    }
-  };
+};
 
   return (
     <div style={styles.root}>
@@ -138,6 +113,7 @@ export default function AuthPage() {
 
             {tab === "signup" && (
               <div style={styles.fieldGroup}>
+              <form onSubmit={handleSubmit}></form>
                 <label style={styles.label}>USERNAME</label>
                 <div style={styles.inputWrap}>
                   <span style={styles.inputIcon}><UserIcon /></span>
@@ -198,16 +174,10 @@ export default function AuthPage() {
               <div style={styles.dividerLine} />
             </div>
 
-          <div style={styles.googleBtnWrap}>
-            <GoogleLogin
-              onSuccess={(credentialResponse) => {
-                console.log(credentialResponse);
-                localStorage.setItem("user", JSON.stringify(credentialResponse));
-                navigate("/home");
-              }}
-              onError={() => console.log("Login Failed")}
-            />
-          </div>
+            <button style={styles.googleBtn} className="google-btn">
+              <GoogleIcon />
+              <span>Google</span>
+            </button>
 
             <p style={styles.backText}>
               <button style={styles.backBtn} className="forgot-btn" onClick={() => navigate("/")}>

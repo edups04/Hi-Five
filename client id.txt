@@ -1,0 +1,5 @@
+client id
+6345721928-e4bkam6s48c9g052ocehr070llhpbnra.apps.googleusercontent.com
+
+client secret
+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

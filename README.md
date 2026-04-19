@@ -11,7 +11,7 @@
   in the terminal type "**node index.js**"
 
 
-**Libraries to install:  **
+**Libraries to install:**
   go to terminal and cd frontend
   in the terminal type "npm install bootstrap axios react-router-dom"
   go to terminal and cd backend/server

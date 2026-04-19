@@ -6,12 +6,12 @@
   create new collection on Hi-Five and name it "users"
 
 
-To run the backend server:
+**To run the backend server:**
   go to terminal and cd backend/server
   in the terminal type "**node index.js**"
 
 
-Libraries to install:  
+**Libraries to install:  **
   go to terminal and cd frontend
   in the terminal type "npm install bootstrap axios react-router-dom"
   go to terminal and cd backend/server

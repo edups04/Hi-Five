@@ -1,7 +1,18 @@
-To connect the database 
+**To connect to the mongodb database:**
+  go to mongodb compass
+  create new connection, press connect (local host should be 27017)
+  create new database on connection
+  name the database "Hi-Five"
+  create new collection on Hi-Five and name it "users"
 
-make a folder on the root folder of your xampp, wampp, or others 
 
-name the folder "hi-five"
+To run the backend server:
+  go to terminal and cd backend/server
+  in the terminal type "**node index.js**"
 
-copy the contents on the backend folder
+
+Libraries to install:  
+  go to terminal and cd frontend
+  in the terminal type "npm install bootstrap axios react-router-dom"
+  go to terminal and cd backend/server
+  in the terminal type "npm install npm install express mongoose cors nodemon bcrypt"

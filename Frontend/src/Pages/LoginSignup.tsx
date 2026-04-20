@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
 import { loginSignupCss as css, loginSignupStyles as styles } from "../styles/pages/LoginSignup.styles";
+import Google from "../assets/google-logo.png";
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
@@ -90,7 +91,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
           <div style={styles.formWrap} className="auth-form-wrap">
             <h3 style={styles.formTitle}>Welcome</h3>
             <p style={styles.formSub}>
-              {tab === "login" ? "Log in to continue your journey" : "Create your account to get started"}
+              {tab === "login" ? "Log in to continue your journey" : "Create your account to start your journey"}
             </p>
 
             {tab === "signup" && (
@@ -165,10 +166,10 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
               <span style={styles.dividerText}>OR CONTINUE WITH</span>
               <div style={styles.dividerLine} />
             </div>
-
-            <button style={styles.googleBtn} className="google-btn">
-              <GoogleIcon />
-              <span>Google</span>
+              
+            <button onClick={()=>window.open("http://localhost:3000/auth/google", "_self")} className="w-full border border-gray-300 rounded-md py-2 flex items-center justify-center gap-2 hover:bg-white/10 transition">
+              <img src={Google} alt="Google Logo" className="w-8 h-8" />
+              Login with Google
             </button>
 
             <p style={styles.backText}>

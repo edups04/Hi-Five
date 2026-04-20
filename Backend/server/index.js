@@ -1,19 +1,26 @@
+require('dotenv').config();  
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const userModel = require('./models/users');
 const UsersModel = require('./models/users');
 const bcrypt = require('bcrypt');
- 
+const authRoute = require('./Routes/authRoute');  
+require('../config/passport');
+
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-mongoose.connect("mongodb://127.0.0.1:27017/Hi-Five");
+mongoose.connect(process.env.MONGO_URI)
+.then(() => console.log("Connected to MongoDB Atlas"))
+.catch(err => console.log(err));
+
+app.use('/auth', authRoute)
 
 app.post('/login', async (req, res) => {
     const {email, password} = req.body;
-    userModel.findOne({email: email})
+    UsersModel.findOne({email: email})
     .then(user => {
         if(user) {
             bcrypt.compare(password, user.password, (err, response) =>{                

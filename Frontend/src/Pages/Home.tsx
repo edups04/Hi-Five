@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from "../assets/Hi-five.png";
 import { homeCss as css, homeStyles as s } from "../styles/pages/Home.styles";
-import { BookOpen, CircleUserRound, Hand, LogOut, PlusCircle, Settings, Sparkles, Square, Video } from "lucide-react";
+import { BookOpen, CircleUserRound, LogOut, PlusCircle, Settings, Sparkles, Square, Video } from "lucide-react";
 
 type NavItem = 'record' | 'library' | 'settings';
 
@@ -77,10 +77,10 @@ function Home() {
       <aside style={s.sidebar} className="home-sidebar">
         <div style={s.sidebarTop} className="home-sidebar-top">
           <div style={s.brand} className="home-brand">
-            <img src={logo} alt="Hi-Five logo" style={{ width: "75px", height: "90px" }} />
+            <img src={logo} alt="Hi-Five logo" style={{ width: "60px", height: "90px" }} />
             <div>
               <div style={s.brandName}>Hi-Five</div>
-              <div style={s.brandSub}><Hand size={10} strokeWidth={2} style={{ marginRight: 4, verticalAlign: "text-top" }} /> ASL MADE VISIBLE</div>
+              <div style={s.brandSub}>ASL MADE VISIBLE</div>
             </div>
           </div>
 

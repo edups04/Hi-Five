@@ -3,7 +3,6 @@ import HiFiveLanding from './Pages/Landing';
 import AuthPage from './Pages/LoginSignup';
 import Home from './Pages/Home';
 import { ProtectedRoutes, PublicRoutes } from "./ProtectedRoutes";
-import { use, useEffect } from "react";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 export default function App() {

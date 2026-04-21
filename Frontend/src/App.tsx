@@ -3,6 +3,7 @@ import HiFiveLanding from './Pages/Landing';
 import AuthPage from './Pages/LoginSignup';
 import Home from './Pages/Home';
 import Library from './Pages/Library';
+import ResetPassword from './Pages/ResetPassword';
 import { ProtectedRoutes, PublicRoutes } from "./ProtectedRoutes";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import AuthSuccess from "./Pages/AuthSuccess";
@@ -17,6 +18,7 @@ export default function App() {
           <Route path="/" element={<HiFiveLanding />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/auth-success" element={<AuthSuccess />} />
+          <Route path="/reset-password/:id/:token/*" element={<ResetPassword />} />
         </Route>
 
         {/* Protected Routes */}

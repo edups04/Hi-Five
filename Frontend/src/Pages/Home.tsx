@@ -58,10 +58,10 @@ function Home() {
     return `${h}:${m}:${sec}`;
   }
 
-  function logout() {
-    localStorage.removeItem('user');
+function logout() {
+    localStorage.removeItem('accessToken');  
     navigate('/auth');
-  }
+}
 
   const navItems = [
     { id: 'record' as NavItem, label: 'Record', icon: <Video size={18} strokeWidth={1.8} /> },

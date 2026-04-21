@@ -16,3 +16,5 @@
   * in the terminal type **npm install bootstrap axios react-router-dom**
   * go to terminal and cd backend/server
   * in the terminal type **npm install express mongoose cors nodemon bcrypt express dotenv**
+
+----------------------------------------------------------------------------------------------------------

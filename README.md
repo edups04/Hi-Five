@@ -20,5 +20,5 @@
 ----------------------------------------------------------------------------------------------------------
 
 **Working Features (System is Connected to a cloud database (MongoDB))**
- *Log in and Sign up
- *Google Log In
+ * Log in and Sign up
+ * Google Log In

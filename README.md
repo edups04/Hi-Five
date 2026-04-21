@@ -13,6 +13,12 @@
 
 **Libraries to install:**
   * go to terminal and cd frontend
-  * in the terminal type "npm install bootstrap axios react-router-dom"
+  * in the terminal type **npm install bootstrap axios react-router-dom**
   * go to terminal and cd backend/server
-  * in the terminal type "npm install npm install express mongoose cors nodemon bcrypt"
+  * in the terminal type **npm install express mongoose cors nodemon bcrypt express dotenv**
+
+----------------------------------------------------------------------------------------------------------
+
+**Working Features (System is Connected to a cloud database (MongoDB))**
+ * Log in and Sign up
+ * Google Log In

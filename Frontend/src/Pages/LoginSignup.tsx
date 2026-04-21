@@ -6,15 +6,6 @@ import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
 import { loginSignupCss as css, loginSignupStyles as styles } from "../styles/pages/LoginSignup.styles";
 import Google from "../assets/google-logo.png";
 
-const GoogleIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M22.54 12.24c0-.78-.07-1.53-.2-2.24H12v4.24h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.74h3.56c2.08-1.92 3.27-4.75 3.27-8.05Z" fill="#4285F4" />
-    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.56-2.74c-.99.66-2.24 1.05-3.72 1.05-2.86 0-5.29-1.93-6.16-4.52H2.16v2.84A10.98 10.98 0 0 0 12 23Z" fill="#34A853" />
-    <path d="M5.84 14.13c-.22-.66-.35-1.36-.35-2.13s.13-1.47.35-2.13V7.03H2.16A11 11 0 0 0 1 12c0 1.8.43 3.5 1.16 4.97l3.68-2.84Z" fill="#FBBC05" />
-    <path d="M12 5.49c1.62 0 3.09.56 4.24 1.65l3.17-3.17A10.97 10.97 0 0 0 12 1C7.68 1 3.9 3.48 2.16 7.03l3.68 2.84C6.71 7.42 9.14 5.49 12 5.49Z" fill="#EA4335" />
-  </svg>
-);
-
 
 export default function AuthPage() {
   const [tab, setTab] = useState<"login" | "signup">("login");
@@ -163,13 +154,15 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
 
             <div style={styles.dividerRow}>
               <div style={styles.dividerLine} />
-              <span style={styles.dividerText}>OR CONTINUE WITH</span>
-              <div style={styles.dividerLine} />
             </div>
-              
-            <button onClick={()=>window.open("http://localhost:3000/auth/google", "_self")} className="w-full border border-gray-300 rounded-md py-2 flex items-center justify-center gap-2 hover:bg-white/10 transition">
-              <img src={Google} alt="Google Logo" className="w-8 h-8" />
-              Login with Google
+
+            <button
+              onClick={()=>window.open("http://localhost:3000/auth/google", "_self")}
+              style={styles.googleBtn}
+              className="google-btn"
+            >
+              <img src={Google} alt="Google Logo" style={{ width: "32px", height: "32px" }} />
+              Continue with Google
             </button>
 
             <p style={styles.backText}>

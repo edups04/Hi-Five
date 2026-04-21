@@ -19,8 +19,9 @@ export default function App() {
         </Route>
 
         {/* Protected Routes */}
+        <Route element={<ProtectedRoutes />}>
           <Route path="/home" element={<Home/>} />
-
+        </Route>
 
       </Routes>
     </BrowserRouter>

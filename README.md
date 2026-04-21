@@ -18,3 +18,7 @@
   * in the terminal type **npm install express mongoose cors nodemon bcrypt express dotenv**
 
 ----------------------------------------------------------------------------------------------------------
+
+**Working Features (System is Connected to a cloud database (MongoDB))**
+ *Log in and Sign up
+ *Google Log In

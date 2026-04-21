@@ -5,6 +5,7 @@ import axios from "axios";
 import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
 import { loginSignupCss as css, loginSignupStyles as styles } from "../styles/pages/LoginSignup.styles";
 import Google from "../assets/google-logo.png";
+import { PasswordResetModal } from "../Modals/SendPasswordReset";
 
 
 export default function AuthPage() {
@@ -14,6 +15,7 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false); 
 
   
 const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
@@ -22,18 +24,25 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
   if (tab === "signup") {
     axios.post('http://localhost:3000/signup', { username, email, password })
     .then(result => {
-      console.log(result);
-      setTab("login");
+      console.log(result.data);
+      if(result.data.success) {        
+        alert("Account created! Please log in.");
+        setTab("login");
+      } else {
+        alert(result.data.message);    
+      }
     })
     .catch(error => console.log(error));
 
   } else {
     axios.post('http://localhost:3000/login', { email, password })
     .then(result => {
-      console.log(result);
-      if (result.data === "Success") {
-        localStorage.setItem("user", JSON.stringify(result.data));
-        navigate("/home");
+      console.log(result.data);
+      if (result.data.success) {
+        localStorage.setItem("accessToken", result.data.token);
+        navigate(`/auth-success?token=${result.data.token}`);
+      } else {
+        alert(result.data.message);
       }
     })
     .catch(error => console.log(error));
@@ -122,7 +131,14 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
               <div style={styles.labelRow}>
                 <label style={styles.label}>PASSWORD</label>
                 {tab === "login" && (
-                  <button style={styles.forgotBtn} className="forgot-btn">Forgot password?</button>
+                                    <button
+                    type="button"
+                    style={styles.forgotBtn}
+                    className="forgot-btn"
+                    onClick={() => setOpen(true)} // 👈 3. Open modal on click
+                  >
+                    Forgot password?
+                  </button>
                 )}
               </div>
               <div style={styles.inputWrap}>
@@ -161,7 +177,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
               style={styles.googleBtn}
               className="google-btn"
             >
-              <img src={Google} alt="Google Logo" style={{ width: "32px", height: "32px" }} />
+              <img src={Google} alt="Google Logo" style={{ width: "30px", height: "32px" }} />
               Continue with Google
             </button>
 
@@ -173,6 +189,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
           </div>
         </div>
       </div>
+      <PasswordResetModal isOpen={open} onClose={() => setOpen(false)} />
     </div>
   );
 }

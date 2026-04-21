@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HiFiveLanding from './Pages/Landing';
 import AuthPage from './Pages/LoginSignup';
 import Home from './Pages/Home';
+import Library from './Pages/Library';
 import { ProtectedRoutes, PublicRoutes } from "./ProtectedRoutes";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import AuthSuccess from "./Pages/AuthSuccess";
@@ -21,6 +22,7 @@ export default function App() {
         {/* Protected Routes */}
         <Route element={<ProtectedRoutes />}>
           <Route path="/home" element={<Home/>} />
+          <Route path="/library" element={<Library/>} />
         </Route>
 
       </Routes>

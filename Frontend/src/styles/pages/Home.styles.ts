@@ -19,6 +19,15 @@ export const homeStyles: Record<string, CSSProperties> = {
     padding: "28px 16px 24px",
   },
   sidebarTop: { display: "flex", flexDirection: "column", gap: "32px" },
+  mobileTopRow: {
+    display: "block",
+  },
+  mobileActions: {
+    display: "none",
+  },
+  mobileMenuBtn: {
+    display: "none",
+  },
   brand: { display: "flex", alignItems: "center", gap: "10px", paddingLeft: "4px" },
   brandName: { fontSize: "18px", fontWeight: 800, color: "#3B1A00", letterSpacing: "-0.01em" },
   brandSub: { fontSize: "9px", color: "#C2410C", fontWeight: 700, letterSpacing: "0.1em", marginTop: "1px" },
@@ -46,6 +55,9 @@ export const homeStyles: Record<string, CSSProperties> = {
     fontFamily: "'Manrope', sans-serif",
     transition: "background 0.15s ease, transform 0.1s ease",
   },
+  mobileNewRecBtnHidden: {
+    display: "none",
+  },
   logoutBtn: {
     display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
     background: "transparent", color: "#9B7355",
@@ -70,6 +82,9 @@ export const homeStyles: Record<string, CSSProperties> = {
   pageTitle: { fontSize: "26px", fontWeight: 800, color: "#C2410C", margin: "0 0 4px", letterSpacing: "-0.01em" },
   pageSubtitle: { fontSize: "13px", color: "#9B7355", margin: 0 },
   avatar: { width: "44px", height: "44px", borderRadius: "50%", objectFit: "cover", border: "2px solid #F0D9C8" },
+  settingsWrap: {
+    paddingTop: "6px",
+  },
   cameraWrap: {
     flex: 1,
     position: "relative",
@@ -137,6 +152,13 @@ export const homeStyles: Record<string, CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
   },
+  avatarInitial: {
+    color: "#C2410C",
+    fontSize: "21px",
+    fontWeight: 800,
+    lineHeight: 1,
+    textTransform: "uppercase",
+  },
 };
 
 export const homeCss = `
@@ -163,21 +185,61 @@ export const homeCss = `
     .home-sidebar-top {
       gap: 14px !important;
     }
+    .home-mobile-top-row {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 10px !important;
+    }
+    .home-mobile-left-group {
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+      min-width: 0 !important;
+    }
+    .home-mobile-left-group .home-brand {
+      min-width: 0 !important;
+    }
     .home-brand img {
       width: 58px !important;
       height: 62px !important;
     }
+    .home-mobile-actions {
+      display: flex !important;
+      align-items: center !important;
+      gap: 10px !important;
+    }
+    .home-mobile-avatar,
+    .home-mobile-avatar-fallback {
+      width: 46px !important;
+      height: 46px !important;
+    }
+    .home-mobile-menu-btn {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 42px !important;
+      height: 42px !important;
+      border-radius: 10px !important;
+      border: 1px solid #E9CDB7 !important;
+      background: #fff4ec !important;
+      color: #C2410C !important;
+      cursor: pointer !important;
+      flex-shrink: 0 !important;
+    }
     .home-nav {
-      flex-direction: row !important;
-      flex-wrap: wrap !important;
+      display: none !important;
+      flex-direction: column !important;
       gap: 8px !important;
+      padding-top: 4px !important;
     }
     .home-nav .nav-item {
-      width: auto !important;
+      width: 100% !important;
       padding: 9px 12px !important;
       font-size: 13px !important;
     }
     .home-sidebar-bottom {
+      display: none !important;
       flex-direction: row !important;
       gap: 10px !important;
     }
@@ -191,9 +253,89 @@ export const homeCss = `
       overflow: visible !important;
       gap: 12px !important;
     }
+    .home-mobile-new-rec-btn {
+      display: flex !important;
+      margin: 2px 0 14px !important;
+      width: 100% !important;
+    }
     .home-camera-wrap {
       min-height: 48vh !important;
       border-radius: 14px !important;
+    }
+
+    .home-mobile-overlay {
+      position: fixed !important;
+      inset: 0 !important;
+      background: rgba(0, 0, 0, 0.28) !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition: opacity 0.2s ease !important;
+      z-index: 30 !important;
+    }
+    .home-mobile-overlay-open {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+
+    .home-mobile-drawer {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      bottom: 0 !important;
+      width: min(78vw, 290px) !important;
+      background: #FAF0E8 !important;
+      border-right: 1px solid #EFD8C7 !important;
+      box-shadow: 8px 0 30px rgba(30, 18, 10, 0.12) !important;
+      transform: translateX(-104%) !important;
+      transition: transform 0.24s ease !important;
+      z-index: 40 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: flex-start !important;
+      padding: 16px !important;
+      gap: 14px !important;
+    }
+    .home-mobile-drawer-open {
+      transform: translateX(0) !important;
+    }
+    .home-mobile-drawer-top {
+      display: flex !important;
+      justify-content: flex-end !important;
+    }
+    .home-mobile-drawer-nav {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+    }
+    .home-mobile-drawer-bottom {
+      margin-top: auto !important;
+      padding-top: 12px !important;
+      border-top: 1px solid #efd9c8 !important;
+    }
+    .home-mobile-drawer-bottom .logout-btn {
+      width: 100% !important;
+      justify-content: flex-start !important;
+      color: #7A4520 !important;
+      border-radius: 10px !important;
+      background: transparent !important;
+    }
+    .home-mobile-drawer-nav .nav-item,
+    .home-mobile-drawer-nav .logout-btn {
+      width: 100% !important;
+    }
+    .home-mobile-drawer-nav .logout-btn {
+      justify-content: flex-start !important;
+      padding: 11px 14px !important;
+      color: #7A4520 !important;
+      border-radius: 10px !important;
+      background: transparent !important;
+    }
+  }
+
+  @media (min-width: 901px) {
+    .home-mobile-overlay,
+    .home-mobile-drawer {
+      display: none !important;
     }
   }
 
@@ -201,6 +343,10 @@ export const homeCss = `
     .home-header {
       margin-bottom: 14px !important;
       align-items: center !important;
+    }
+    .home-header .home-header-avatar,
+    .home-header .home-header-avatar-fallback {
+      display: none !important;
     }
     .home-title-wrap h1 {
       font-size: 20px !important;

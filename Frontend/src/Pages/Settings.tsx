@@ -5,21 +5,47 @@ import logo from '../assets/Hi-five.png';
 import { getData } from '../context/userContext';
 import { settingsCss as css, settingsStyles as s } from '../styles/pages/Settings.styles';
 
+interface FormState {
+	username: string;
+	email: string;
+	currentPassword: string;
+	newPassword: string;
+	confirmPassword: string;
+}
+
+interface UserProfile {
+	username?: string;
+	name?: string;
+	given_name?: string;
+	displayName?: string;
+	email?: string;
+	picture?: string;
+	createdAt?: string;
+	profileObj?: {
+		name?: string;
+		givenName?: string;
+		email?: string;
+		imageUrl?: string;
+	};
+}
+
 function SettingsPage() {
 	const navigate = useNavigate();
 	const { user } = getData();
 	const [isEditing, setIsEditing] = useState(false);
-	const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const [showPasswords, setShowPasswords] = useState({ new: false, confirm: false });
+	const [statusMessage, setStatusMessage] = useState<{ text: string; ok: boolean } | null>(null);
+	const [saving, setSaving] = useState(false);
 
-	function toggleShow(field) {
+	function toggleShow(field: 'new' | 'confirm') {
 		setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
 	}
 
-	const currentUser = useMemo(() => {
+	const currentUser = useMemo<UserProfile | null>(() => {
 		const userRaw = localStorage.getItem('user');
 
-		let localUser = null;
+		let localUser: UserProfile | null = null;
 		try {
 			localUser = userRaw ? JSON.parse(userRaw) : null;
 		} catch {
@@ -54,15 +80,15 @@ function SettingsPage() {
 		return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
 	}, [currentUser]);
 
-	const [formState, setFormState] = useState({
+	const [formState, setFormState] = useState<FormState>({
 		username: displayName,
 		email: displayEmail,
-		currentPassword: '************',
+		currentPassword: '',
 		newPassword: '',
 		confirmPassword: '',
 	});
 
-	function handleNav(path) {
+	function handleNav(path: string) {
 		navigate(path);
 	}
 
@@ -73,6 +99,7 @@ function SettingsPage() {
 	}
 
 	function startEditing() {
+		setStatusMessage(null);
 		setIsEditing(true);
 	}
 
@@ -80,18 +107,69 @@ function SettingsPage() {
 		setFormState({
 			username: displayName,
 			email: displayEmail,
-			currentPassword: '************',
+			currentPassword: '',
 			newPassword: '',
 			confirmPassword: '',
 		});
+		setShowPasswords({ new: false, confirm: false });
+		setStatusMessage(null);
 		setIsEditing(false);
 	}
 
-	function saveChanges() {
+	async function saveChanges() {
+		const { currentPassword, newPassword, confirmPassword } = formState;
+
+		if (newPassword || confirmPassword || currentPassword) {
+			if (!currentPassword) {
+				setStatusMessage({ text: 'Please enter your current password.', ok: false });
+				return;
+			}
+			if (!newPassword) {
+				setStatusMessage({ text: 'Please enter a new password.', ok: false });
+				return;
+			}
+			if (newPassword !== confirmPassword) {
+				setStatusMessage({ text: 'New passwords do not match.', ok: false });
+				return;
+			}
+
+			const token = localStorage.getItem('accessToken');
+			if (!token) {
+				setStatusMessage({ text: 'Session expired. Please log in again.', ok: false });
+				return;
+			}
+
+			setSaving(true);
+			try {
+				const res = await fetch('http://localhost:3000/update-password', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${token}`,
+					},
+					body: JSON.stringify({ currentPassword, newPassword }),
+				});
+				const data = await res.json();
+				if (data.success) {
+					setStatusMessage({ text: 'Password updated successfully.', ok: true });
+					setFormState((prev) => ({ ...prev, currentPassword: '', newPassword: '', confirmPassword: '' }));
+					setShowPasswords({ new: false, confirm: false });
+					setIsEditing(false);
+				} else {
+					setStatusMessage({ text: data.message || 'Failed to update password.', ok: false });
+				}
+			} catch {
+				setStatusMessage({ text: 'Network error. Please try again.', ok: false });
+			} finally {
+				setSaving(false);
+			}
+			return;
+		}
+
 		setIsEditing(false);
 	}
 
-	function onFieldChange(event) {
+	function onFieldChange(event: React.ChangeEvent<HTMLInputElement>) {
 		const { name, value } = event.target;
 		setFormState((previous) => ({ ...previous, [name]: value }));
 	}
@@ -114,7 +192,7 @@ function SettingsPage() {
 								<Menu size={20} strokeWidth={2} />
 							</button>
 							<div style={s.brand} className="settings-brand">
-								<img src={logo} alt="Hi-Five logo" style={{ width: '60px', height:'90px' }} />
+								<img src={logo} alt="Hi-Five logo" style={{ width: '60px', height: '90px' }} />
 								<div>
 									<div style={s.brandName}>Hi-Five</div>
 									<div style={s.brandSub}>ASL MADE VISIBLE</div>
@@ -246,21 +324,17 @@ function SettingsPage() {
 						<div style={s.inputGrid} className="settings-input-grid">
 							<div style={{ ...s.field, gridColumn: '1 / -1' }}>
 								<label htmlFor="currentPassword" style={s.label}>Current Password</label>
-								<div style={s.passwordWrap}>
-									<input
-										id="currentPassword"
-										name="currentPassword"
-										style={{ ...s.input, paddingRight: '36px' }}
-										className="settings-input"
-										type={showPasswords.current ? 'text' : 'password'}
-										value={formState.currentPassword}
-										onChange={onFieldChange}
-										readOnly={!isEditing}
-									/>
-									<button type="button" style={s.eyeBtn} onClick={() => toggleShow('current')} tabIndex={-1} aria-label="Toggle password visibility">
-										{showPasswords.current ? <EyeOff size={16} strokeWidth={2} /> : <Eye size={16} strokeWidth={2} />}
-									</button>
-								</div>
+								<input
+									id="currentPassword"
+									name="currentPassword"
+									style={s.input}
+									className="settings-input"
+									type="password"
+									placeholder={isEditing ? 'Enter current password' : '••••••••••••'}
+									value={formState.currentPassword}
+									onChange={onFieldChange}
+									readOnly={!isEditing}
+								/>
 							</div>
 
 							{isEditing && (
@@ -303,6 +377,12 @@ function SettingsPage() {
 								</>
 							)}
 						</div>
+
+						{statusMessage && (
+							<p style={{ margin: '10px 0 0', fontSize: '13px', fontWeight: 600, color: statusMessage.ok ? '#16a34a' : '#dc2626' }}>
+								{statusMessage.text}
+							</p>
+						)}
 					</div>
 
 					<div style={s.actions} className="settings-actions">
@@ -313,17 +393,19 @@ function SettingsPage() {
 									style={s.actionBtn}
 									className="settings-secondary-btn"
 									onClick={discardChanges}
+									disabled={saving}
 								>
 									Discard Changes
 								</button>
 
 								<button
 									type="button"
-									style={{ ...s.actionBtn, ...s.actionBtnPrimary }}
+									style={{ ...s.actionBtn, ...s.actionBtnPrimary, opacity: saving ? 0.7 : 1 }}
 									className="settings-primary-btn"
 									onClick={saveChanges}
+									disabled={saving}
 								>
-									Save Changes
+									{saving ? 'Saving…' : 'Save Changes'}
 								</button>
 							</>
 						) : (

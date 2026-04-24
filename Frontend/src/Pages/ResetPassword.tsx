@@ -2,17 +2,15 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
+import {
+  resetPasswordStyles as styles, resetPasswordCss as css, BROWN, BROWN_DARK,
+  } from "../styles/pages/ResetPassword.styles";
 
 type Step = "reset" | "success";
 
-const BROWN = "#8B3A1A";
-const BROWN_DARK = "#6B2A10";
-const BROWN_LIGHT = "#FDF0E8";
-const BROWN_BORDER = "#E8C9B0";
-
 export default function ResetPassword() {
   const { id } = useParams();
-  const token = window.location.pathname.split('/').pop();
+  const token = window.location.pathname.split("/").pop();
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>("reset");
@@ -55,120 +53,86 @@ export default function ResetPassword() {
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "12px 44px",
-    boxSizing: "border-box",
-    border: `1.5px solid ${BROWN_BORDER}`,
-    borderRadius: 14,
-    background: BROWN_LIGHT,
-    fontSize: 14,
-    color: "#2a1a10",
-    outline: "none",
-    fontFamily: "inherit",
-    transition: "border 0.2s",
-  };
-
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#FAF0E8",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 16,
-      fontFamily: "'Manrope', sans-serif",
-    }}>
-      <div style={{
-        background: "#fff",
-        borderRadius: 28,
-        width: "100%",
-        maxWidth: 400,
-        overflow: "hidden",
-        boxShadow: "0 40px 80px rgba(139,58,26,0.18), 0 8px 24px rgba(0,0,0,0.08)",
-      }}>
+    <div style={styles.root}>
+      <style>{css}</style>
+      <div style={styles.card}>
         {/* Top accent bar */}
-        <div style={{ height: 4, background: `linear-gradient(90deg, ${BROWN_DARK}, ${BROWN}, #c4622a)` }} />
+        <div style={styles.accentBar} />
 
         {step === "reset" ? (
-          <div style={{ padding: "36px 36px 32px" }}>
+          <div style={styles.resetPanel}>
             {/* Icon */}
-            <div style={{
-              width: 72, height: 72, borderRadius: 20,
-              background: BROWN_LIGHT, border: `1.5px solid ${BROWN_BORDER}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              marginBottom: 24,
-            }}>
+            <div style={styles.iconWrap}>
               <Lock size={28} color={BROWN} strokeWidth={1.8} />
             </div>
 
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a10", margin: "0 0 8px", letterSpacing: "-0.4px" }}>
-              Create new password
-            </h2>
-            <p style={{ fontSize: 14, color: "#7a6050", margin: "0 0 28px", lineHeight: 1.6 }}>
+            <h2 style={styles.heading}>Create new password</h2>
+            <p style={styles.subText}>
               Set a new, strong password for your account to keep it secure.
             </p>
 
             <form onSubmit={handleSubmit}>
               {/* New Password */}
-              <div style={{ marginBottom: 16 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#5a3a2a", letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 8 }}>
-                  New password
-                </label>
-                <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>New password</label>
+                <div style={styles.inputWrap}>
+                  <span style={styles.inputIconLeft}>
                     <Lock size={16} color={BROWN} strokeWidth={1.8} />
                   </span>
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="········"
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = BROWN)}
-                    onBlur={e => (e.target.style.borderColor = BROWN_BORDER)}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={styles.input}
+                    className="reset-input"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(p => !p)}
-                    style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                    onClick={() => setShowPassword((p) => !p)}
+                    style={styles.toggleBtn}
                   >
-                    {showPassword ? <EyeOff size={16} color="#9B7355" strokeWidth={1.9} /> : <Eye size={16} color="#9B7355" strokeWidth={1.9} />}
+                    {showPassword
+                      ? <EyeOff size={16} color="#9B7355" strokeWidth={1.9} />
+                      : <Eye size={16} color="#9B7355" strokeWidth={1.9} />}
                   </button>
                 </div>
               </div>
 
               {/* Confirm Password */}
-              <div style={{ marginBottom: error ? 8 : 24 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#5a3a2a", letterSpacing: "0.6px", textTransform: "uppercase", display: "block", marginBottom: 8 }}>
-                  Confirm password
-                </label>
-                <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+              <div style={error ? styles.fieldGroup : styles.fieldGroupNoError}>
+                <label style={styles.label}>Confirm password</label>
+                <div style={styles.inputWrap}>
+                  <span style={styles.inputIconLeft}>
                     <Lock size={16} color={BROWN} strokeWidth={1.8} />
                   </span>
                   <input
                     type={showConfirm ? "text" : "password"}
                     placeholder="········"
                     value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    style={inputStyle}
-                    onFocus={e => (e.target.style.borderColor = BROWN)}
-                    onBlur={e => (e.target.style.borderColor = BROWN_BORDER)}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    style={styles.input}
+                    className="reset-input"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowConfirm(p => !p)}
-                    style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                    onClick={() => setShowConfirm((p) => !p)}
+                    style={styles.toggleBtn}
                   >
-                    {showConfirm ? <EyeOff size={16} color="#9B7355" strokeWidth={1.9} /> : <Eye size={16} color="#9B7355" strokeWidth={1.9} />}
+                    {showConfirm
+                      ? <EyeOff size={16} color="#9B7355" strokeWidth={1.9} />
+                      : <Eye size={16} color="#9B7355" strokeWidth={1.9} />}
                   </button>
                 </div>
               </div>
 
               {error && (
-                <p style={{ fontSize: 12, color: "#e53e3e", margin: "0 0 16px", display: "flex", alignItems: "center", gap: 4 }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#e53e3e"><circle cx="12" cy="12" r="12" /><text x="12" y="17" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">!</text></svg>
+                <p style={styles.errorText}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="#e53e3e">
+                    <circle cx="12" cy="12" r="12" />
+                    <text x="12" y="17" textAnchor="middle" fill="white" fontSize="14" fontWeight="bold">!</text>
+                  </svg>
                   {error}
                 </p>
               )}
@@ -176,49 +140,28 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={loading}
-                style={{
-                  width: "100%", padding: 14, borderRadius: 14,
-                  background: loading ? "#c4855a" : BROWN,
-                  color: "#fff", fontSize: 15, fontWeight: 700,
-                  border: "none", cursor: loading ? "not-allowed" : "pointer",
-                  letterSpacing: "0.2px", transition: "background 0.2s",
-                }}
-                onMouseEnter={e => { if (!loading) (e.currentTarget).style.background = BROWN_DARK; }}
-                onMouseLeave={e => { if (!loading) (e.currentTarget).style.background = BROWN; }}
+                style={loading ? styles.submitBtnLoading : styles.submitBtn}
+                className={loading ? undefined : "reset-submit-btn"}
               >
                 {loading ? "Saving..." : "Save password"}
               </button>
             </form>
           </div>
         ) : (
-          <div style={{ padding: "40px 36px 36px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-            <div style={{
-              width: 90, height: 90, borderRadius: 24,
-              background: "#EAF3DE", border: "1.5px solid #C0DD97",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              marginBottom: 24,
-            }}>
+          <div style={styles.successPanel}>
+            <div style={styles.successIconWrap}>
               <CheckCircle size={40} color="#3B6D11" strokeWidth={1.8} />
             </div>
 
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a10", margin: "0 0 10px", letterSpacing: "-0.4px" }}>
-              Password changed
-            </h2>
-            <p style={{ fontSize: 14, color: "#7a6050", margin: "0 0 28px", lineHeight: 1.65, maxWidth: 280 }}>
+            <h2 style={styles.successHeading}>Password changed</h2>
+            <p style={styles.successSubText}>
               Your password has been successfully updated. You can now use your new password to log in.
             </p>
 
             <button
               onClick={() => navigate("/auth")}
-              style={{
-                width: "100%", padding: 14, borderRadius: 14,
-                background: BROWN, color: "#fff",
-                fontSize: 15, fontWeight: 700,
-                border: "none", cursor: "pointer",
-                letterSpacing: "0.2px", transition: "background 0.2s",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = BROWN_DARK)}
-              onMouseLeave={e => (e.currentTarget.style.background = BROWN)}
+              style={styles.backBtn}
+              className="reset-back-btn"
             >
               Back to log in
             </button>

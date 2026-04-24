@@ -3,6 +3,7 @@ import HiFiveLanding from './Pages/Landing';
 import AuthPage from './Pages/LoginSignup';
 import Home from './Pages/Home';
 import Library from './Pages/Library';
+import Settings from './Pages/Settings.jsx';
 import ResetPassword from './Pages/ResetPassword';
 import { ProtectedRoutes, PublicRoutes } from "./ProtectedRoutes";
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -25,6 +26,7 @@ export default function App() {
         <Route element={<ProtectedRoutes />}>
           <Route path="/home" element={<Home/>} />
           <Route path="/library" element={<Library/>} />
+          <Route path="/settings" element={<Settings/>} />
         </Route>
 
       </Routes>

@@ -91,6 +91,12 @@ function logout() {
       return;
     }
 
+    if (item === 'settings') {
+      navigate('/settings');
+      setMobileMenuOpen(false);
+      return;
+    }
+
     setActiveNav(item);
     setMobileMenuOpen(false);
   }
@@ -130,13 +136,15 @@ function logout() {
             </div>
 
             <div style={s.mobileActions} className="home-mobile-actions">
-              {picture ? (
-                <img src={picture} alt="avatar" style={s.avatar} className="home-mobile-avatar" />
-              ) : (
-                <div style={s.avatarFallback} className="home-mobile-avatar-fallback">
-                  <span style={s.avatarInitial}>{avatarInitial}</span>
-                </div>
-              )}
+              <button type="button" onClick={() => navigate('/settings')} title="Go to Settings" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                {picture ? (
+                  <img src={picture} alt="avatar" style={s.avatar} className="home-mobile-avatar" />
+                ) : (
+                  <div style={s.avatarFallback} className="home-mobile-avatar-fallback">
+                    <span style={s.avatarInitial}>{avatarInitial}</span>
+                  </div>
+                )}
+              </button>
             </div>
           </div>
 
@@ -223,13 +231,15 @@ function logout() {
                 <h1 style={s.pageTitle}>Start Recording</h1>
                 <p style={s.pageSubtitle}>Try recording</p>
               </div>
-              {picture ? (
-                <img src={picture} alt="avatar" style={s.avatar} className="home-header-avatar" />
+              <button type="button" onClick={() => navigate('/settings')} title="Go to Settings" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                {picture ? (
+                  <img src={picture} alt="avatar" style={s.avatar} className="home-header-avatar" />
                 ) : (
-                <div style={s.avatarFallback} className="home-header-avatar-fallback">
-                  <span style={s.avatarInitial}>{avatarInitial}</span>
-                </div>
+                  <div style={s.avatarFallback} className="home-header-avatar-fallback">
+                    <span style={s.avatarInitial}>{avatarInitial}</span>
+                  </div>
                 )}
+              </button>
             </header>
 
             <button style={{ ...s.newRecBtn, ...s.mobileNewRecBtnHidden }} className="new-rec-btn home-mobile-new-rec-btn" onClick={startRecording}>

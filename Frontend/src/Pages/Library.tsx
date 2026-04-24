@@ -51,6 +51,12 @@
         return;
         }
 
+        if (item === 'settings') {
+        navigate('/settings');
+        setMobileMenuOpen(false);
+        return;
+        }
+
         setActiveNav(item);
         setMobileMenuOpen(false);
     }
@@ -94,13 +100,15 @@
                 </div>
 
                 <div style={s.mobileActions} className="home-mobile-actions">
-                {picture ? (
+                <button type="button" onClick={() => navigate('/settings')} title="Go to Settings" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                    {picture ? (
                     <img src={picture} alt="avatar" style={s.avatar} className="home-mobile-avatar" />
-                ) : (
+                    ) : (
                     <div style={s.avatarFallback} className="home-mobile-avatar-fallback">
-                    <span style={s.avatarInitial}>{avatarInitial}</span>
+                        <span style={s.avatarInitial}>{avatarInitial}</span>
                     </div>
-                )}
+                    )}
+                </button>
                 </div>
             </div>
 
@@ -191,13 +199,15 @@
                     <Search size={16} color="#9B7355" strokeWidth={2} />
                     <input style={s.searchInput} placeholder="Search video..." aria-label="Search video" />
                     </div>
+                    <button type="button" onClick={() => navigate('/settings')} title="Go to Settings" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                     {picture ? (
-                    <img src={picture} alt="avatar" style={s.avatar} className="home-header-avatar" />
+                        <img src={picture} alt="avatar" style={s.avatar} className="home-header-avatar" />
                     ) : (
-                    <div style={s.avatarFallback} className="home-header-avatar-fallback">
+                        <div style={s.avatarFallback} className="home-header-avatar-fallback">
                         <span style={s.avatarInitial}>{avatarInitial}</span>
-                    </div>
+                        </div>
                     )}
+                    </button>
                 </div>
                 </header>
 

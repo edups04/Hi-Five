@@ -9,10 +9,12 @@ const authRoute = require('./Routes/authRoute');
 require('../config/passport');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const recordingsRouter = require('./Routes/recordings');
 
 const app = express();
 app.use(express.json());
 app.use(cors());
+app.use('/api/recordings', recordingsRouter);
 
 mongoose.connect(process.env.MONGO_URI)
 .then(() => console.log("Connected to MongoDB Atlas"))

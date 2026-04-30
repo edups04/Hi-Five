@@ -110,7 +110,7 @@ export const homeStyles: Record<string, CSSProperties> = {
     animation: "blink 1s infinite",
   },
   tryBadge: {
-    position: "absolute", top: "16px", right: "16px",
+    position: "absolute", top: "16px", right: "62px",
     background: "rgba(0,0,0,0.7)", color: "#fff",
     borderRadius: "50px", padding: "6px 14px",
     fontSize: "13px", fontWeight: 600,
@@ -159,6 +159,110 @@ export const homeStyles: Record<string, CSSProperties> = {
     lineHeight: 1,
     textTransform: "uppercase",
   },
+
+  // ===== ASL / ML overlay styles =============================================
+  // Added for the live ASL recognition feature. Kept in the same `homeStyles`
+  // object so they're imported the same way as everything else.
+
+  // Wrapper that centers the accumulating sentence at the bottom of the video.
+  // `bottom: 110px` clears the 60px stop button + its 28px bottom margin.
+  subtitleWrap: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: "110px",
+    display: "flex",
+    justifyContent: "center",
+    padding: "0 32px",
+    pointerEvents: "none",       // don't block clicks meant for the video
+    zIndex: 10,
+  },
+  // The sentence text itself. Soft drop shadow so it reads on bright backgrounds too.
+  subtitleText: {
+    color: "#fff",
+    fontSize: "clamp(24px, 4vw, 44px)",   // responsive: 24px (mobile) → 44px (desktop)
+    fontWeight: 700,
+    textAlign: "center",
+    margin: 0,
+    maxWidth: "100%",
+    wordBreak: "break-word",
+    letterSpacing: "-0.01em",
+    lineHeight: 1.15,
+    fontFamily: "'Manrope', sans-serif",
+    textShadow:
+      "0 2px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.6), 0 0 16px rgba(0,0,0,0.4)",
+  },
+
+  // Bottom-right Clear button. Same rounded-pill shape as the recording badges.
+  clearBtn: {
+    position: "absolute",
+    right: "20px",
+    bottom: "20px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "9px 16px",
+    fontSize: "13px",
+    fontWeight: 700,
+    color: "#fff",
+    background: "rgba(0, 0, 0, 0.65)",
+    border: "1px solid rgba(255,255,255,0.15)",
+    borderRadius: "50px",
+    cursor: "pointer",
+    backdropFilter: "blur(6px)",
+    WebkitBackdropFilter: "blur(6px)",
+    zIndex: 20,
+    fontFamily: "'Manrope', sans-serif",
+    letterSpacing: "0.02em",
+    transition: "background 0.15s ease, transform 0.1s ease",
+  },
+
+  // Top-left dev overlay shown when 'd' key is toggled while recording.
+  // Positioned below the recording badge (which sits at top:16, ~32px tall).
+  debugOverlay: {
+    position: "absolute",
+    top: "56px",
+    left: "16px",
+    padding: "8px 12px",
+    fontSize: "12px",
+    fontFamily: "ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
+    color: "#fff",
+    background: "rgba(0, 0, 0, 0.65)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: "8px",
+    backdropFilter: "blur(6px)",
+    WebkitBackdropFilter: "blur(6px)",
+    zIndex: 15,
+    lineHeight: 1.45,
+    minWidth: "110px",
+  },
+  debugLabelGood: { color: "#4ade80", fontWeight: 700 },   // hand detected — green
+  debugLabelNone: { color: "#f87171", fontWeight: 700 },   // no hand — red
+  debugFps: { color: "#9ca3af", marginTop: "2px" },        // gray
+
+  // Fullscreen toggle button — top-right, sits next to the "Try It Out" badge.
+  // Uses the same dark-glass style as the badge for visual consistency.
+  fsBtn: {
+    position: "absolute",
+    top: "16px",
+    right: "16px",       // leaves room for the "Try It Out" badge
+    width: "36px",
+    height: "36px",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "rgba(0,0,0,0.7)",
+    color: "#fff",
+    border: "1px solid rgba(255,255,255,0.15)",
+    borderRadius: "50%",
+    cursor: "pointer",
+    backdropFilter: "blur(6px)",
+    WebkitBackdropFilter: "blur(6px)",
+    zIndex: 11,
+    padding: 0,
+    transition: "background 0.15s ease, transform 0.1s ease",
+    fontFamily: "'Manrope', sans-serif",
+  },
 };
 
 export const homeCss = `
@@ -167,6 +271,25 @@ export const homeCss = `
   .logout-btn:hover { color: #C2410C !important; }
   .stop-btn:hover { transform: translateX(-50%) scale(1.08) !important; }
   @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
+  /* ASL overlay hover state */
+  .asl-clear-btn:hover {
+    background: rgba(0, 0, 0, 0.85) !important;
+    transform: translateY(-1px);
+  }
+
+  /* Fullscreen toggle button hover */
+  .asl-fs-btn:hover {
+    background: rgba(0, 0, 0, 0.9) !important;
+    transform: translateY(-1px);
+  }
+  .asl-fs-btn:focus { outline: none; }
+  .asl-fs-btn:focus-visible {
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.45) !important;
+  }
+  /* Hide the cursor on the video when fullscreen so it doesn't distract */
+  .home-camera-wrap:fullscreen { cursor: default; }
+  .home-camera-wrap:fullscreen video { cursor: default; }
 
   @media (max-width: 900px) {
     .home-root {
@@ -373,6 +496,33 @@ export const homeCss = `
       width: 54px !important;
       height: 54px !important;
       bottom: 20px !important;
+    }
+
+    /* ASL overlays — shrink to fit smaller stop button */
+    .asl-subtitle-wrap {
+      bottom: 92px !important;
+      padding: 0 16px !important;
+    }
+    .asl-subtitle-text {
+      font-size: clamp(20px, 5vw, 32px) !important;
+    }
+    .asl-clear-btn {
+      right: 12px !important;
+      bottom: 12px !important;
+      padding: 7px 12px !important;
+      font-size: 12px !important;
+    }
+    .asl-debug-overlay {
+      top: 48px !important;
+      left: 10px !important;
+      font-size: 11px !important;
+      padding: 6px 10px !important;
+    }
+    .asl-fs-btn {
+      width: 32px !important;
+      height: 32px !important;
+      top: 10px !important;
+      right: 110px !important;
     }
   }
 `;

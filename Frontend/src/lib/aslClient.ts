@@ -1,5 +1,4 @@
 /**
- * aslClient.ts
  *
  * Thin wrapper around the Flask ML server. The rest of the app should
  * never call fetch() directly for predictions — go through here so we
@@ -10,7 +9,6 @@
  *
  *     VITE_ASL_API_URL=http://localhost:3001
  *
- * (Vite exposes env vars prefixed with VITE_ to the browser.)
  */
 
 export interface Prediction {
@@ -30,11 +28,7 @@ const API_URL =
  * @param signal        Optional AbortSignal to cancel in-flight requests
  *                      (useful when the user stops recording mid-flight).
  * @returns             Prediction, or null on transient network/server error.
- *
- * Why null instead of throwing: the calling loop runs many times per second
- * and shouldn't crash on a single hiccup. The hook handles null by skipping
- * that frame.
- */
+  */
 export async function predictFrame(
   imageDataUrl: string,
   signal?: AbortSignal,
@@ -81,7 +75,7 @@ export async function predictFrame(
 }
 
 /**
- * Health check. Useful for the UI to show "server offline" if Flask isn't running.
+ * Health check.
  */
 export async function checkHealth(): Promise<boolean> {
   try {

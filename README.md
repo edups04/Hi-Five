@@ -16,8 +16,8 @@
   * go to terminal and cd frontend
   * in the terminal type **npm install bootstrap axios react-router-dom**
   * go to terminal and cd backend/server
-  * in the terminal type **npm install express mongoose cors nodemon bcrypt express dotenv**
-  * in the terminal go to cd/Hi-Five_Recognition and type **pip install -r requirements.txt**
+  * in the terminal type **npm install express mongoose cors nodemon bcrypt express dotenv multer**
+  * in the terminal go to cd/Hi-Five_Recognition/ml and type **pip install -r requirements.txt**
 
 ----------------------------------------------------------------------------------------------------------
 

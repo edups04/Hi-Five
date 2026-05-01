@@ -26,3 +26,4 @@
  * Forgot Password
  * Update Password in Profile/Settings
  * ASL Sign Language Recognition (Record, Save and Export)
+ * While Recording you can press **d** to turn on the debug menu (see what signs are being recognize before being turning into captions)

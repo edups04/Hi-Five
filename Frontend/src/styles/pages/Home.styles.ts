@@ -217,11 +217,9 @@ export const homeStyles: Record<string, CSSProperties> = {
     transition: "background 0.15s ease, transform 0.1s ease",
   },
 
-  // Top-left dev overlay shown when 'd' key is toggled while recording.
-  // Positioned below the recording badge (which sits at top:16, ~32px tall).
   debugOverlay: {
     position: "absolute",
-    top: "56px",
+    top: "16px",
     left: "16px",
     padding: "8px 12px",
     fontSize: "12px",
@@ -240,8 +238,6 @@ export const homeStyles: Record<string, CSSProperties> = {
   debugLabelNone: { color: "#f87171", fontWeight: 700 },   // no hand — red
   debugFps: { color: "#9ca3af", marginTop: "2px" },        // gray
 
-  // Fullscreen toggle button — top-right, sits next to the "Try It Out" badge.
-  // Uses the same dark-glass style as the badge for visual consistency.
   fsBtn: {
     position: "absolute",
     top: "16px",

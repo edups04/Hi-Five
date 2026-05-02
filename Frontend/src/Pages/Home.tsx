@@ -20,8 +20,8 @@ function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [seconds, setSeconds] = useState(0);
-  const [showDebug, setShowDebug] = useState(false);
-  // Modal state.
+  const [showDebug, setShowDebug] = useState(true);
+  // Modal state.'
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
   // Duration of the just-finished recording, captured at stop time so we
   // can include it in the upload metadata. The seconds counter resets on

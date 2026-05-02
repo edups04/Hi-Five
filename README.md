@@ -31,5 +31,6 @@
 ----------------------------------------------------------------------------------------------------------
 
 **ASL CHEATSHEET**
+
 _Note: Most alphabets are recognized on the right hand, but if some letters are not getting recognized try the left hand (del and space are primarily left handed features)_
 <img width="842" height="480" alt="asl-cheatsheet" src="https://github.com/user-attachments/assets/f6806f97-05f1-46a6-b6a0-1470d6a9641a" />

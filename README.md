@@ -27,3 +27,10 @@
  * Update Password in Profile/Settings
  * ASL Sign Language Recognition (Record, Save and Export)
  * While Recording you can press **d** to turn on the debug menu (see what signs are being recognize before being turning into captions)
+
+----------------------------------------------------------------------------------------------------------
+
+**ASL CHEATSHEET**
+
+_Note: Most alphabets are recognized on the right hand, but if some letters/functions are not getting recognized try the left hand_
+<img width="842" height="480" alt="asl-cheatsheet" src="https://github.com/user-attachments/assets/f6806f97-05f1-46a6-b6a0-1470d6a9641a" />

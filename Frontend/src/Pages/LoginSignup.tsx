@@ -173,7 +173,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
             </div>
 
             <button
-              onClick={()=>window.open("${API_URL}/auth/google", "_self")}
+              onClick={()=>window.open('${API_URL}/auth/google', "_self")}
               style={styles.googleBtn}
               className="google-btn"
             >

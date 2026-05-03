@@ -77,7 +77,7 @@ const handleSend = async () => {
     setError("");
     setLoading(true);
     try {
-      await axios.post("${API_URL}/forgot-password", { email });
+      await axios.post('${API_URL}/forgot-password', { email });
       setStep("sent");
     } catch (err: any) {
       if(err.response) {

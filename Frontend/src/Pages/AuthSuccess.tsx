@@ -27,7 +27,7 @@ const AuthSuccess = () => {
             if(accessToken) {
                 localStorage.setItem("accessToken", accessToken);
                 try {
-                    const res = await axios.get("${API_URL}/auth/me", {
+                    const res = await axios.get('${API_URL}/auth/me', {
                         headers:{
                             Authorization: `Bearer ${accessToken}`
                         }

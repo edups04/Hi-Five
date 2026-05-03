@@ -1,0 +1,39 @@
+# --- CRITICAL: exclude the multi-megabyte training CSVs ---
+# These are training artifacts, not needed at runtime. The trained
+# model in models/ is what predict.py uses.
+data/
+
+# --- The "smoke test" / experimental models (only the production one is needed) ---
+# We keep models/asl_xgb.json, models/label_encoder.pkl, models/hand_landmarker.task
+# but drop the other one to keep the image small.
+models/asl_model_xgb.json
+
+# --- Notebooks (training only, useless at runtime) ---
+notebooks/
+
+# --- Local debug artifacts ---
+debug_frames/
+*.log
+
+# --- Python noise ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# --- node_modules accidentally created here, definitely not needed in Python container ---
+node_modules/
+package.json
+package-lock.json
+
+# --- Misc ---
+.git/
+.gitignore
+.dockerignore
+.DS_Store
+README.md

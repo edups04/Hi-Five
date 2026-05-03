@@ -9,6 +9,7 @@ import { useVideoRecorder } from '../hooks/useVideoRecorder';
 import { RecordingPreviewModal } from '../Modals/RecordingPreview';
 import { uploadRecording } from '../lib/recordingsClient';
 import { useToast } from '../components/Toast';
+import ASLOverlay from "../components/AslOverlay";
 
 type NavItem = 'record' | 'library' | 'settings';
 
@@ -39,6 +40,7 @@ function Home() {
   // + stop button) goes fullscreen so all the overlays stay together.
   const cameraWrapRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showASLOverlay, setShowASLOverlay] = useState(false);
 
   const {
     sentence,
@@ -406,7 +408,10 @@ function Home() {
                 </div>
               )}
 
-              <div style={s.tryBadge} className="home-try-badge">
+              <div 
+                style={{ ...s.tryBadge, cursor: 'pointer' }} 
+                className="home-try-badge asl-fs-btn"
+                onClick={() => setShowASLOverlay(true)}>
                 <Sparkles size={14} strokeWidth={1.8} /> Try It Out
               </div>
 
@@ -472,6 +477,11 @@ function Home() {
                   Clear
                 </button>
               )}
+              <ASLOverlay
+                visible={showASLOverlay}
+                onClose={() => setShowASLOverlay(false)}
+              />
+
             </div>
           </>
         )}

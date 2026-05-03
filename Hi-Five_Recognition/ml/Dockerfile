@@ -1,14 +1,20 @@
 # Dockerfile for the Hi-Five Flask ML server.
 #
 # Why a Dockerfile (not Railway's auto-detect): mediapipe and opencv have
-# native dependencies (libGL, libglib, etc) that aren't in Railway's default
-# Python image. Pinning a Dockerfile makes the deploy reproducible.
+# native dependencies (libGL, libGLES, libglib, etc) that aren't in
+# Railway's default Python image. Pinning a Dockerfile makes it reproducible.
 
 FROM python:3.11-slim
 
-# System dependencies needed by mediapipe and opencv-python.
+# System dependencies needed by mediapipe + opencv-python.
+# - libgl1 / libglx-mesa0: OpenGL desktop bits
+# - libgles2 / libegl1: OpenGL ES (newer mediapipe versions need these)
+# - libglib2.0-0, libsm6, libxext6, libxrender1: opencv display deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
+    libglx-mesa0 \
+    libgles2 \
+    libegl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
@@ -28,5 +34,5 @@ COPY . .
 ENV PORT=3001
 EXPOSE 3001
 
-# Run the Flask app. app.py reads $PORT correctly already.
+# Run the Flask app. app.py reads $PORT correctly.
 CMD ["python", "app.py"]

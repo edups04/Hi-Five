@@ -6,7 +6,7 @@ const cors = require('cors');
 const UsersModel = require('./models/users');
 const bcrypt = require('bcrypt');
 const authRoute = require('./Routes/authRoute');  
-require('../config/passport');
+require('./config/passport');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const recordingsRouter = require('./Routes/recordings');

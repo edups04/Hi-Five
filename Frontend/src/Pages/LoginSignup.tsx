@@ -22,7 +22,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
   e.preventDefault();
 
   if (tab === "signup") {
-    axios.post('http://localhost:3000/signup', { username, email, password })
+    axios.post('${API_URL}/signup', { username, email, password })
     .then(result => {
       console.log(result.data);
       if(result.data.success) {        
@@ -35,7 +35,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
     .catch(error => console.log(error));
 
   } else {
-    axios.post('http://localhost:3000/login', { email, password })
+    axios.post('${API_URL}/login', { email, password })
     .then(result => {
       console.log(result.data);
       if (result.data.success) {
@@ -173,7 +173,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
             </div>
 
             <button
-              onClick={()=>window.open("http://localhost:3000/auth/google", "_self")}
+              onClick={()=>window.open("${API_URL}/auth/google", "_self")}
               style={styles.googleBtn}
               className="google-btn"
             >

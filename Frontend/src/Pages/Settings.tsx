@@ -141,7 +141,7 @@ function SettingsPage() {
 
 			setSaving(true);
 			try {
-				const res = await fetch('http://localhost:3000/update-password', {
+				const res = await fetch('${API_URL}/update-password', {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',

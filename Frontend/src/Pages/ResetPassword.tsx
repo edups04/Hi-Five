@@ -40,7 +40,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const res = await axios.post(`http://localhost:3000/reset-password/${id}/${token}`, { password });
+      const res = await axios.post("${API_URL}/reset-password/${id}/${token}", { password });
       if (res.data.Status === "Success") {
         setStep("success");
       } else {

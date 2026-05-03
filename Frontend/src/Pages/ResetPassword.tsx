@@ -3,13 +3,17 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Lock, Eye, EyeOff, CheckCircle } from "lucide-react";
 import {
-  resetPasswordStyles as styles, resetPasswordCss as css, BROWN, BROWN_DARK,
+  resetPasswordStyles as styles, resetPasswordCss as css, BROWN,
   } from "../styles/pages/ResetPassword.styles";
+
+  
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 type Step = "reset" | "success";
 
 export default function ResetPassword() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params.id;
   const token = window.location.pathname.split("/").pop();
   const navigate = useNavigate();
 
@@ -40,7 +44,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const res = await axios.post("${API_URL}/reset-password/${id}/${token}", { password });
+      const res = await axios.post(`${API_URL}/reset-password/${id}/${token}`, { password });
       if (res.data.Status === "Success") {
         setStep("success");
       } else {

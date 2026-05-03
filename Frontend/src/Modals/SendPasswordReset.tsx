@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
+// Backend URL: from env in production (Vercel), falls back to localhost for dev.
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 type Step = "email" | "sent";
 
 const BROWN = "#8B3A1A";
@@ -77,7 +80,7 @@ const handleSend = async () => {
     setError("");
     setLoading(true);
     try {
-      await axios.post('${API_URL}/forgot-password', { email });
+      await axios.post(`${API_URL}/forgot-password`, { email });
       setStep("sent");
     } catch (err: any) {
       if(err.response) {

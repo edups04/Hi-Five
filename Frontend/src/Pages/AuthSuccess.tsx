@@ -5,6 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import logo from '../assets/Hi-five.png';
 import { authSuccessCss as css, authSuccessStyles as styles } from '../styles/pages/AuthSuccess.styles';
 
+// Backend URL: from env in production (Vercel), falls back to localhost for dev.
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 const AuthSuccess = () => {
     const {setUser} = getData();
     const navigate = useNavigate();
@@ -27,7 +30,7 @@ const AuthSuccess = () => {
             if(accessToken) {
                 localStorage.setItem("accessToken", accessToken);
                 try {
-                    const res = await axios.get('${API_URL}/auth/me', {
+                    const res = await axios.get(`${API_URL}/auth/me`, {
                         headers:{
                             Authorization: `Bearer ${accessToken}`
                         }

@@ -7,6 +7,8 @@ import { loginSignupCss as css, loginSignupStyles as styles } from "../styles/pa
 import Google from "../assets/google-logo.png";
 import { PasswordResetModal } from "../Modals/SendPasswordReset";
 
+// Backend URL: from env in production (Vercel), falls back to localhost for dev.
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export default function AuthPage() {
   const [tab, setTab] = useState<"login" | "signup">("login");
@@ -22,7 +24,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
   e.preventDefault();
 
   if (tab === "signup") {
-    axios.post('${API_URL}/signup', { username, email, password })
+    axios.post(`${API_URL}/signup`, { username, email, password })
     .then(result => {
       console.log(result.data);
       if(result.data.success) {        
@@ -35,7 +37,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
     .catch(error => console.log(error));
 
   } else {
-    axios.post('${API_URL}/login', { email, password })
+    axios.post(`${API_URL}/login`, { email, password })
     .then(result => {
       console.log(result.data);
       if (result.data.success) {
@@ -173,7 +175,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
             </div>
 
             <button
-              onClick={()=>window.open('${API_URL}/auth/google', "_self")}
+              onClick={()=>window.open(`${API_URL}/auth/google`, "_self")}
               style={styles.googleBtn}
               className="google-btn"
             >
@@ -193,4 +195,3 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
     </div>
   );
 }
-

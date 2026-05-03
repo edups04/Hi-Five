@@ -5,6 +5,9 @@ import logo from '../assets/Hi-five.png';
 import { getData } from '../context/userContext';
 import { settingsCss as css, settingsStyles as s } from '../styles/pages/Settings.styles';
 
+// Backend URL: from env in production (Vercel), falls back to localhost for dev.
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 interface FormState {
 	username: string;
 	email: string;
@@ -141,7 +144,7 @@ function SettingsPage() {
 
 			setSaving(true);
 			try {
-				const res = await fetch('${API_URL}/update-password', {
+				const res = await fetch(`${API_URL}/update-password`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',

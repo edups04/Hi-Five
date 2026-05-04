@@ -64,13 +64,26 @@ app.post('/forgot-password', (req, res) => {
             return res.send({ Status: "Account not found" });
         } 
         const token = jwt.sign({id: user._id, email: user.email}, process.env.SECRET_KEY, { expiresIn: "1h" });
+
+        // Explicit Gmail SMTP config. The shorthand `service: 'gmail'` works
+        // locally but on Railway the default ports/timeouts get blocked,
+        // hanging the request indefinitely. Port 465 with SSL is the most
+        // reliable option from cloud providers.
         var transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS
-            }
+            },
+            // 10 sec timeouts so a stuck connection fails fast instead of
+            // hanging the user's browser request forever.
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 10000,
         });
+
         var mailOptions = {
             from: process.env.EMAIL_USER,
             to: user.email,
@@ -79,13 +92,20 @@ app.post('/forgot-password', (req, res) => {
         };
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
-                console.error(error);
-            } else {
-                return res.send({ Status: "Password reset email sent" });
+                // Previously this branch only logged and never responded —
+                // browser would hang on "Sending..." forever. Now we always
+                // respond, so the user sees an error instead of a hang.
+                console.error('Email send failed:', error);
+                return res.status(500).send({ Status: "Failed to send email. Please try again later." });
             }
+            return res.send({ Status: "Password reset email sent" });
         });
     
     })
+    .catch(err => {
+        console.error('forgot-password error:', err);
+        res.status(500).send({ Status: "Server error" });
+    });
 });
 
 app.post('/reset-password/:id/:token', (req, res) => {
@@ -140,6 +160,8 @@ app.post('/update-password', async (req, res) => {
     });
 });
 
-app.listen(3000, () => {
-    console.log("Server is running on port 3000");
+// Use Railway's assigned PORT, fall back to 3000 locally.
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });

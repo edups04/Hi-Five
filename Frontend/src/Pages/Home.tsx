@@ -260,6 +260,19 @@ function Home() {
   return (
     <div style={s.root} className="home-root">
       <style>{css}</style>
+    <style>{`
+      @media (max-width: 600px) {
+        .home-try-badge {
+          white-space: nowrap !important;
+          width: auto !important;
+          max-width: none !important;
+          margin-right: 40px !important;
+        }
+        .asl-fs-btn {
+          right: 12px !important;
+        }
+      }
+    `}</style>
 
       {/* Sidebar */}
       <aside style={s.sidebar} className="home-sidebar">

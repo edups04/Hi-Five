@@ -160,6 +160,15 @@ export const homeStyles: Record<string, CSSProperties> = {
     textTransform: "uppercase",
   },
 
+<<<<<<< HEAD
+=======
+  // ===== ASL / ML overlay styles =============================================
+  // Added for the live ASL recognition feature. Kept in the same `homeStyles`
+  // object so they're imported the same way as everything else.
+
+  // Wrapper that centers the accumulating sentence at the bottom of the video.
+  // `bottom: 110px` clears the 60px stop button + its 28px bottom margin.
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
   subtitleWrap: {
     position: "absolute",
     left: 0,
@@ -168,12 +177,22 @@ export const homeStyles: Record<string, CSSProperties> = {
     display: "flex",
     justifyContent: "center",
     padding: "0 32px",
+<<<<<<< HEAD
     pointerEvents: "none",     
     zIndex: 10,
   },
   subtitleText: {
     color: "#fff",
     fontSize: "clamp(24px, 4vw, 44px)",   
+=======
+    pointerEvents: "none",       // don't block clicks meant for the video
+    zIndex: 10,
+  },
+  // The sentence text itself. Soft drop shadow so it reads on bright backgrounds too.
+  subtitleText: {
+    color: "#fff",
+    fontSize: "clamp(24px, 4vw, 44px)",   // responsive: 24px (mobile) → 44px (desktop)
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
     fontWeight: 700,
     textAlign: "center",
     margin: 0,
@@ -186,6 +205,10 @@ export const homeStyles: Record<string, CSSProperties> = {
       "0 2px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.6), 0 0 16px rgba(0,0,0,0.4)",
   },
 
+<<<<<<< HEAD
+=======
+  // Bottom-right Clear button. Same rounded-pill shape as the recording badges.
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
   clearBtn: {
     position: "absolute",
     right: "20px",
@@ -227,14 +250,24 @@ export const homeStyles: Record<string, CSSProperties> = {
     lineHeight: 1.45,
     minWidth: "110px",
   },
+<<<<<<< HEAD
   debugLabelGood: { color: "#4ade80", fontWeight: 700 },   
   debugLabelNone: { color: "#f87171", fontWeight: 700 },   
   debugFps: { color: "#9ca3af", marginTop: "2px" },       
+=======
+  debugLabelGood: { color: "#4ade80", fontWeight: 700 },   // hand detected — green
+  debugLabelNone: { color: "#f87171", fontWeight: 700 },   // no hand — red
+  debugFps: { color: "#9ca3af", marginTop: "2px" },        // gray
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 
   fsBtn: {
     position: "absolute",
     top: "16px",
+<<<<<<< HEAD
     right: "16px",       
+=======
+    right: "16px",       // leaves room for the "Try It Out" badge
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
     width: "36px",
     height: "36px",
     display: "inline-flex",
@@ -261,6 +294,7 @@ export const homeCss = `
   .stop-btn:hover { transform: translateX(-50%) scale(1.08) !important; }
   @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
 
+<<<<<<< HEAD
   @keyframes subtitleNudge {
     0%   { transform: translateX(0); }
     50%  { transform: translateX(-8px); }
@@ -270,6 +304,8 @@ export const homeCss = `
     animation: subtitleNudge 0.2s ease-out;
   }
 
+=======
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
   /* ASL overlay hover state */
   .asl-clear-btn:hover {
     background: rgba(0, 0, 0, 0.85) !important;

@@ -20,17 +20,36 @@ function Home() {
   const [activeNav, setActiveNav] = useState<NavItem>('record');
   const [isRecording, setIsRecording] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+<<<<<<< HEAD
   const [spacePulse, setSpacePulse] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [showDebug, setShowDebug] = useState(true);
   const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
   const [pendingDurationSec, setPendingDurationSec] = useState(0);
   const [pendingSentence, setPendingSentence] = useState('');
+=======
+  const [seconds, setSeconds] = useState(0);
+  const [showDebug, setShowDebug] = useState(true);
+  // Modal state.'
+  const [pendingBlob, setPendingBlob] = useState<Blob | null>(null);
+  // Duration of the just-finished recording, captured at stop time so we
+  // can include it in the upload metadata. The seconds counter resets on
+  // stop so we can't rely on it after the modal opens.
+  const [pendingDurationSec, setPendingDurationSec] = useState(0);
+  // Sentence captured at stop time too — same reason: we clear it later.
+  const [pendingSentence, setPendingSentence] = useState('');
+  // True while POSTing to the backend; disables modal buttons.
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
   const [isSaving, setIsSaving] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+<<<<<<< HEAD
+=======
+  // Fullscreen target — the entire camera area (video + REC badge + subtitle
+  // + stop button) goes fullscreen so all the overlays stay together.
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
   const cameraWrapRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showASLOverlay, setShowASLOverlay] = useState(false);
@@ -41,7 +60,10 @@ function Home() {
     fps: predictFps,
     clearSentence,
     backspace,
+<<<<<<< HEAD
     appendSpace,
+=======
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
   } = useFrameCapture(videoRef, isRecording, { fps: 5 });
 
   const recorder = useVideoRecorder();
@@ -51,6 +73,10 @@ function Home() {
     sentenceRef.current = sentence;
   }, [sentence]);
 
+<<<<<<< HEAD
+=======
+  // Get user info from localStorage
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
   const userRaw = localStorage.getItem('user');
   let userObj: any = null;
 
@@ -78,6 +104,7 @@ function Home() {
       if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
       recorder.stop();
     };
+<<<<<<< HEAD
     }, []);
 
 useEffect(() => {
@@ -104,6 +131,36 @@ useEffect(() => {
     return () => window.removeEventListener('keydown', onKey);
   }, [isRecording, clearSentence, backspace, appendSpace]);
 
+=======
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!isRecording) return;
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+
+      if (e.key === 'c' || e.key === 'C') {
+        clearSentence();
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        backspace();
+      } else if (e.key === 'd' || e.key === 'D') {
+        setShowDebug(v => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isRecording, clearSentence, backspace]);
+
+  // Fullscreen plumbing — always active (works whether recording or not, so
+  // users can fullscreen first and start recording from there).
+  //
+  // Sync our React state with the actual fullscreen state. This is what
+  // catches the user pressing Esc to exit fullscreen — the API doesn't tell
+  // us directly, we have to listen for the event.
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
   useEffect(() => {
     const onFsChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
@@ -119,11 +176,22 @@ useEffect(() => {
       document.exitFullscreen().catch(() => {});
     } else {
       el.requestFullscreen().catch(() => {
+<<<<<<< HEAD
+=======
+        // Most likely cause: not triggered by a user gesture. We always call
+        // this from a click or keydown so it should never happen, but log
+        // just in case.
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
         console.warn('[fullscreen] requestFullscreen() rejected');
       });
     }
   }
 
+<<<<<<< HEAD
+=======
+  // 'f' key shortcut for fullscreen — separate effect because this should
+  // work even when not recording (so the user can fullscreen then start).
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -159,6 +227,11 @@ useEffect(() => {
   function stopRecording() {
     if (timerRef.current) clearInterval(timerRef.current);
 
+<<<<<<< HEAD
+=======
+    // Snapshot duration + sentence BEFORE clearing them, so we can attach
+    // them to the upload when the user clicks Keep.
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
     setPendingDurationSec(seconds);
     setPendingSentence(sentenceRef.current);
 
@@ -170,6 +243,10 @@ useEffect(() => {
     setSeconds(0);
   }
 
+<<<<<<< HEAD
+=======
+  // Modal callbacks --------------------------------------------------------
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 
   async function handleKeep(name: string) {
     if (!pendingBlob || isSaving) return;
@@ -455,6 +532,7 @@ useEffect(() => {
                 </div>
               )}
 
+<<<<<<< HEAD
             {sentence && (
               <div style={s.subtitleWrap} className="asl-subtitle-wrap">
                 <p 
@@ -465,6 +543,13 @@ useEffect(() => {
                 </p>
               </div>
             )}
+=======
+              {sentence && (
+                <div style={s.subtitleWrap} className="asl-subtitle-wrap">
+                  <p style={s.subtitleText} className="asl-subtitle-text">{sentence}</p>
+                </div>
+              )}
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 
               {isRecording && sentence && (
                 <button

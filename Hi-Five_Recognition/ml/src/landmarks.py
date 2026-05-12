@@ -1,4 +1,5 @@
 """
+<<<<<<< HEAD
 Shared MediaPipe HandLandmarker + wrist-centered normalization + engineered features.
 
 This module is the single source of truth for how a frame becomes a
@@ -11,13 +12,25 @@ Feature vector composition (90 features total):
   - Last 27 : engineered features focused on disambiguating closed-fist
               letters (M, N, T, A, S, E) which the raw landmark vector
               struggles with. See `engineer_features` below for details.
+=======
+Shared MediaPipe HandLandmarker + wrist-centered normalization.
+
+This module is the single source of truth for how a frame becomes a
+63-dimensional feature vector. Both the XGBoost alphabet pipeline and
+the future LSTM word-level pipeline import from here, so the feature
+representation stays identical across models.
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 
 Public API:
     HandLandmarkExtractor       — wraps MediaPipe Tasks HandLandmarker
     normalize_landmarks(arr)    — wrist-centered, scale-normalized 63-vector
+<<<<<<< HEAD
     engineer_features(arr)      — 27 derived features for fist discrimination
     build_feature_vector(arr)   — concatenates the above into the 90-dim vector
     NUM_LANDMARKS, FEATURE_DIM  — constants (21, 90)
+=======
+    NUM_LANDMARKS, FEATURE_DIM  — constants (21, 63)
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 """
 
 from __future__ import annotations
@@ -36,6 +49,7 @@ from mediapipe.tasks.python import vision as mp_vision
 
 NUM_LANDMARKS = 21          # MediaPipe returns 21 hand keypoints
 COORDS_PER_LANDMARK = 3     # x, y, z
+<<<<<<< HEAD
 RAW_FEATURE_DIM = NUM_LANDMARKS * COORDS_PER_LANDMARK  # 63
 ENGINEERED_FEATURE_DIM = 27
 FEATURE_DIM = RAW_FEATURE_DIM + ENGINEERED_FEATURE_DIM  # 90
@@ -59,13 +73,26 @@ FINGER_TIPS = [8, 12, 16, 20]   # index, middle, ring, pinky tips
 THUMB_TIP = 4
 
 # Official Google-hosted HandLandmarker task file.
+=======
+FEATURE_DIM = NUM_LANDMARKS * COORDS_PER_LANDMARK  # 63
+
+WRIST_IDX = 0               # MediaPipe landmark index for the wrist
+MIDDLE_FINGER_MCP_IDX = 12  # used as the scale reference (knuckle of middle finger)
+
+# Official Google-hosted HandLandmarker task file. Full-precision (float32) is
+# more accurate than float16 and the size difference is negligible for our use.
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 HAND_LANDMARKER_URL = (
     "https://storage.googleapis.com/mediapipe-models/hand_landmarker/"
     "hand_landmarker/float16/1/hand_landmarker.task"
 )
 
 
+<<<<<<< HEAD
 # --- Raw landmark normalization ----------------------------------------------
+=======
+# --- Normalization -----------------------------------------------------------
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 
 def normalize_landmarks(landmarks_flat: np.ndarray) -> np.ndarray:
     """
@@ -73,7 +100,11 @@ def normalize_landmarks(landmarks_flat: np.ndarray) -> np.ndarray:
 
     Steps:
       1. Translate so the wrist (landmark 0) is at the origin.
+<<<<<<< HEAD
       2. Scale so the distance from wrist to middle-finger MCP (landmark 9)
+=======
+      2. Scale so the distance from wrist to middle-finger MCP (landmark 12)
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
          is 1.0. This makes the representation invariant to:
            - hand distance from camera
            - absolute hand size (different users)
@@ -84,8 +115,13 @@ def normalize_landmarks(landmarks_flat: np.ndarray) -> np.ndarray:
 
     Returns:
         shape (63,) normalized vector. If the hand size is degenerate
+<<<<<<< HEAD
         (zero-length, basically never happens for a real hand), returns
         the wrist-centered vector without scaling.
+=======
+        (zero-length, which should basically never happen for a real hand),
+        returns the wrist-centered vector without scaling.
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
     """
     arr = np.asarray(landmarks_flat, dtype=np.float32).reshape(NUM_LANDMARKS, COORDS_PER_LANDMARK)
     wrist = arr[WRIST_IDX]
@@ -96,6 +132,7 @@ def normalize_landmarks(landmarks_flat: np.ndarray) -> np.ndarray:
     return arr.flatten().astype(np.float32)
 
 
+<<<<<<< HEAD
 # --- Engineered features -----------------------------------------------------
 
 def engineer_features(normalized_flat: np.ndarray) -> np.ndarray:
@@ -205,6 +242,8 @@ def build_feature_vector(landmarks_flat: np.ndarray) -> np.ndarray:
     return np.concatenate([normalized, engineered]).astype(np.float32)
 
 
+=======
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 # --- HandLandmarker wrapper --------------------------------------------------
 
 @dataclass
@@ -212,7 +251,11 @@ class LandmarkResult:
     """Result of running the extractor on one image."""
     found: bool
     raw_landmarks: Optional[np.ndarray]   # shape (63,), un-normalized, or None
+<<<<<<< HEAD
     normalized: Optional[np.ndarray]      # shape (90,), normalized + engineered, or None
+=======
+    normalized: Optional[np.ndarray]      # shape (63,), wrist-normalized, or None
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 
 
 class HandLandmarkExtractor:
@@ -223,12 +266,21 @@ class HandLandmarkExtractor:
         extractor = HandLandmarkExtractor()  # downloads the .task file if needed
         result = extractor.extract(rgb_image)  # rgb_image is HxWx3 uint8 RGB ndarray
         if result.found:
+<<<<<<< HEAD
             features = result.normalized  # shape (90,), ready for XGBoost
+=======
+            features = result.normalized  # ready for XGBoost
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 
     Notes:
       - This class is NOT thread-safe. Create one per worker / per request handler,
         or guard with a lock.
+<<<<<<< HEAD
       - num_hands=1 because ASL alphabet is single-handed.
+=======
+      - num_hands=1 because ASL alphabet is single-handed. For two-handed signs in
+        the WLASL stage, instantiate a second extractor with num_hands=2.
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
     """
 
     def __init__(
@@ -259,7 +311,11 @@ class HandLandmarkExtractor:
             min_hand_detection_confidence=min_detection_confidence,
             min_hand_presence_confidence=min_presence_confidence,
             min_tracking_confidence=min_tracking_confidence,
+<<<<<<< HEAD
             running_mode=mp_vision.RunningMode.IMAGE,
+=======
+            running_mode=mp_vision.RunningMode.IMAGE,  # IMAGE mode = synchronous, what we want
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
         )
         self._detector = mp_vision.HandLandmarker.create_from_options(options)
 
@@ -272,8 +328,11 @@ class HandLandmarkExtractor:
 
         Returns:
             LandmarkResult. If no hand is found, found=False and arrays are None.
+<<<<<<< HEAD
             If found=True, `normalized` is shape (90,): the 63 wrist-normalized
             landmarks concatenated with 27 engineered features.
+=======
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
         """
         if rgb_image.dtype != np.uint8:
             rgb_image = rgb_image.astype(np.uint8)
@@ -288,7 +347,11 @@ class HandLandmarkExtractor:
         return LandmarkResult(
             found=True,
             raw_landmarks=raw,
+<<<<<<< HEAD
             normalized=build_feature_vector(raw),
+=======
+            normalized=normalize_landmarks(raw),
+>>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
         )
 
     def close(self) -> None:

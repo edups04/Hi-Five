@@ -7,7 +7,6 @@ import { loginSignupCss as css, loginSignupStyles as styles } from "../styles/pa
 import Google from "../assets/google-logo.png";
 import { PasswordResetModal } from "../Modals/SendPasswordReset";
 
-// Backend URL: from env in production (Vercel), falls back to localhost for dev.
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export default function AuthPage() {

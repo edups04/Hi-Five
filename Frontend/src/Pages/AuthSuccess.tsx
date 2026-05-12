@@ -5,10 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import logo from '../assets/Hi-five.png';
 import { authSuccessCss as css, authSuccessStyles as styles } from '../styles/pages/AuthSuccess.styles';
 
-<<<<<<< HEAD
-=======
-// Backend URL: from env in production (Vercel), falls back to localhost for dev.
->>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 const AuthSuccess = () => {

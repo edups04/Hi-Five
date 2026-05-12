@@ -1,30 +1,3 @@
-<<<<<<< HEAD
-=======
-/**
- * SentenceBuilder.ts
- *
- * Turns a stream of per-frame predictions into a stable, accumulating
- * sentence. Direct port of the Python SentenceBuilder in test_webcam.py
- * — same defaults, same behavior. The Python version is unit-tested so
- * we know the rules work.
- *
- * Usage:
- *   const builder = new SentenceBuilder();
- *   builder.update("A", 0.95);          // call once per frame
- *   console.log(builder.sentence);      // "A" once stable
- *
- * Rules:
- *   - A letter is committed only when it's been the top prediction for
- *     STABILITY_FRAMES consecutive frames AND confidence >= MIN_CONFIDENCE
- *     AND it differs from the last letter committed.
- *   - To repeat a letter (e.g. "BOOK"): change to a different sign or
- *     pull the hand away for RESET_FRAMES, then sign the letter again.
- *   - "space" sign  -> appends " "
- *   - "del" sign    -> deletes the last character (acts as backspace)
- *   - "nothing"     -> never committed (it's not a letter)
- */
-
->>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 export const STABILITY_FRAMES = 5;
 export const MIN_CONFIDENCE = 0.7;
 export const RESET_FRAMES = 4;
@@ -42,11 +15,6 @@ export class SentenceBuilder {
   private minConfidence: number;
   private resetFrames: number;
 
-<<<<<<< HEAD
-=======
-  // A small ring buffer of the last N predictions — used to verify the
-  // current label has been "stable" before committing it.
->>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
   private recent: string[] = [];
   private lastCommitted: string | null = null;
   private framesSinceCommit = 0;
@@ -57,29 +25,11 @@ export class SentenceBuilder {
     this.resetFrames = opts.resetFrames ?? RESET_FRAMES;
   }
 
-<<<<<<< HEAD
   update(label: string, confidence: number): boolean {
 
     this.recent.push(confidence >= this.minConfidence ? label : "_low");
     if (this.recent.length > this.stabilityFrames) this.recent.shift();
     this.framesSinceCommit++;
-=======
-  /**
-   * Feed one frame's prediction. Returns true if a letter was committed
-   * on this call (useful for sound effects, haptics, etc).
-   */
-  update(label: string, confidence: number): boolean {
-    // Ring-buffer push: keep only the last `stabilityFrames` predictions.
-    // Low-confidence frames are tagged "_low" so they break stability runs
-    // even if the label is correct — we only trust confident readings.
-    this.recent.push(confidence >= this.minConfidence ? label : "_low");
-    if (this.recent.length > this.stabilityFrames) this.recent.shift();
-    this.framesSinceCommit++;
-
-    // Allow re-committing the same letter once enough "different" frames
-    // have passed (or the user signed something else). This is what makes
-    // "BOOK" possible without making "AAAA" possible from a held A.
->>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
     if (
       this.lastCommitted !== null &&
       this.framesSinceCommit >= this.resetFrames &&
@@ -124,10 +74,7 @@ export class SentenceBuilder {
   backspace(): void {
     this.sentence = this.sentence.slice(0, -1);
   }
-<<<<<<< HEAD
   appendSpace(): void {
     this.sentence += " ";
   }
-=======
->>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 }

@@ -6,10 +6,6 @@ import {
   resetPasswordStyles as styles, resetPasswordCss as css, BROWN,
   } from "../styles/pages/ResetPassword.styles";
 
-<<<<<<< HEAD
-=======
-// Backend URL: from env in production (Vercel), falls back to localhost for dev.
->>>>>>> 4223b98f78c3d8d11e30c357874cd2be4ce5721f
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 type Step = "reset" | "success";

@@ -1,44 +1,23 @@
-/**
- *
- * Thin wrapper around the Flask ML server. The rest of the app should
- * never call fetch() directly for predictions — go through here so we
- * have one place to add timeouts, error handling, and (later) auth.
- *
- * Reads the base URL from VITE_ASL_API_URL if set, otherwise falls back
- * to http://localhost:3001 for local dev. Add this to your .env.local:
- *
- *     VITE_ASL_API_URL=http://localhost:3001
- *
- */
-
 export interface Prediction {
-  label: string;          // "A" .. "Z" | "space" | "del" | "nothing"
-  confidence: number;     // 0.0 - 1.0
+  label: string;
+  confidence: number;
   hand_detected: boolean;
 }
+
+export type SignMode = "asl" | "fsl" | "both";
 
 const API_URL =
   (import.meta.env.VITE_ASL_API_URL as string | undefined) ??
   "http://localhost:3001";
 
-/**
- * Predict the ASL letter shown in a single frame.
- *
- * @param imageDataUrl  data URL from canvas.toDataURL("image/jpeg", ...)
- * @param signal        Optional AbortSignal to cancel in-flight requests
- *                      (useful when the user stops recording mid-flight).
- * @returns             Prediction, or null on transient network/server error.
-  */
 export async function predictFrame(
   imageDataUrl: string,
   signal?: AbortSignal,
+  mode: SignMode = "asl",
 ): Promise<Prediction | null> {
-  // Keep our own ~2s timeout in case the server hangs. Browsers don't
-  // time out fetch() automatically.
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 2000);
 
-  // Forward the caller's abort signal too.
   if (signal) {
     if (signal.aborted) {
       controller.abort();
@@ -51,7 +30,7 @@ export async function predictFrame(
     const res = await fetch(`${API_URL}/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: imageDataUrl }),
+      body: JSON.stringify({ image: imageDataUrl, mode }),
       signal: controller.signal,
     });
 
@@ -64,7 +43,6 @@ export async function predictFrame(
     return (await res.json()) as Prediction;
   } catch (err) {
     if ((err as Error).name === "AbortError") {
-      // Expected when stopping recording or hitting the timeout — not noise.
       return null;
     }
     console.warn("[aslClient] /predict failed:", err);
@@ -74,9 +52,6 @@ export async function predictFrame(
   }
 }
 
-/**
- * Health check.
- */
 export async function checkHealth(): Promise<boolean> {
   try {
     const res = await fetch(`${API_URL}/health`, { method: "GET" });

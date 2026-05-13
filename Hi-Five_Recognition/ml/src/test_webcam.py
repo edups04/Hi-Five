@@ -279,9 +279,14 @@ def run(
     min_confidence: float = MIN_CONFIDENCE,
     stability_frames: int = STABILITY_FRAMES,
     debug_dir: Path = Path("debug_frames"),
+    model_path: str = "models/asl_xgb.json",
+    encoder_path: str = "models/label_encoder.pkl",
 ) -> None:
-    print("[init] Loading model ...")
-    predictor = AslPredictor()
+    print(f"[init] Loading model from {model_path} ...")
+    predictor = AslPredictor(
+        model_path=model_path,
+        encoder_path=encoder_path,
+    )
     print("[init] Model ready.")
 
     cap = cv2.VideoCapture(camera_index)
@@ -378,12 +383,18 @@ def main() -> None:
     p.add_argument("--stability", type=int, default=STABILITY_FRAMES,
                    help=f"Frames a prediction must hold before committing (default {STABILITY_FRAMES}).")
     p.add_argument("--debug-dir", type=Path, default=Path("debug_frames"))
+    p.add_argument("--model", type=str, default="models/asl_xgb.json",
+                   help="Path to XGBoost model file (default: models/asl_xgb.json).")
+    p.add_argument("--encoder", type=str, default="models/label_encoder.pkl",
+                   help="Path to label encoder file (default: models/label_encoder.pkl).")
     args = p.parse_args()
     run(
         camera_index=args.camera,
         min_confidence=args.min_confidence,
         stability_frames=args.stability,
         debug_dir=args.debug_dir,
+        model_path=args.model,
+        encoder_path=args.encoder,
     )
 
 

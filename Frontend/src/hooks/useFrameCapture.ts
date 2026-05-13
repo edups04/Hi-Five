@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { predictFrame, type Prediction } from "../lib/aslClient";
+import { predictFrame, type Prediction, type SignMode } from "../lib/aslClient";
 import { SentenceBuilder } from "../asl/SentenceBuilder";
 
 export interface UseFrameCaptureOptions {
   fps?: number;
   jpegQuality?: number;
+  mode?: SignMode;
 }
 
 export interface UseFrameCaptureResult {
@@ -26,6 +27,7 @@ export function useFrameCapture(
 ): UseFrameCaptureResult {
   const fps = options.fps ?? DEFAULT_FPS;
   const jpegQuality = options.jpegQuality ?? DEFAULT_JPEG_QUALITY;
+  const mode = options.mode ?? "asl";
 
   const [sentence, setSentence] = useState("");
   const [lastPrediction, setLastPrediction] = useState<Prediction | null>(null);
@@ -52,7 +54,7 @@ export function useFrameCapture(
     builderRef.current?.appendSpace();
     setSentence(builderRef.current?.sentence ?? "");
   };
-  
+
   useEffect(() => {
     if (!isActive) return;
 
@@ -84,8 +86,8 @@ export function useFrameCapture(
       inFlightRef.current = true;
       const t0 = performance.now();
       try {
-        const prediction = await predictFrame(dataUrl, controller.signal);
-        if (!prediction) return; // network/server hiccup — skip this frame
+        const prediction = await predictFrame(dataUrl, controller.signal, mode);
+        if (!prediction) return;
 
         builder.update(prediction.label, prediction.confidence);
 
@@ -113,7 +115,7 @@ export function useFrameCapture(
       abortRef.current = null;
       inFlightRef.current = false;
     };
-  }, [isActive, fps, jpegQuality, videoRef]);
+  }, [isActive, fps, jpegQuality, mode, videoRef]);
 
   return { sentence, lastPrediction, fps: liveFps, clearSentence, backspace, appendSpace };
 }

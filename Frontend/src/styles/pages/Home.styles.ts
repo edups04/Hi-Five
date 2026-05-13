@@ -460,6 +460,68 @@ export const homeCss = `
     }
   }
 
+  @media (max-width: 600px) {
+    .home-try-badge {
+      white-space: nowrap !important;
+      width: auto !important;
+      max-width: none !important;
+      margin-right: 40px !important;
+    }
+    .asl-fs-btn {
+      right: 12px !important;
+    }
+  }
+
+  .sign-mode-toggle {
+    display: inline-flex;
+    align-items: center;
+    background: #F0D9C8;
+    border-radius: 50px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .sign-mode-btn {
+    padding: 6px 16px;
+    border-radius: 50px;
+    border: none;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Manrope', sans-serif;
+    transition: background 0.15s ease, color 0.15s ease;
+    background: transparent;
+    color: #9B7355;
+  }
+  .sign-mode-btn.active {
+    background: #92400E;
+    color: #fff;
+  }
+  .sign-mode-btn:not(.active):hover {
+    background: rgba(146,64,14,0.12);
+    color: #92400E;
+  }
+  .sign-mode-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .sign-mode-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  @media (max-width: 900px) {
+    .sign-mode-row {
+      margin-bottom: 10px;
+    }
+    .sign-mode-btn {
+      padding: 5px 12px;
+      font-size: 12px;
+    }
+  }
+
   @media (max-width: 640px) {
     .home-header {
       margin-bottom: 14px !important;

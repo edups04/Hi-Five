@@ -1,3 +1,4 @@
+**To run the frontend server:**
   * go to terminal and cd frontend
   * in the terminal type "**npm run dev**"
 

@@ -1,4 +1,3 @@
-<img width="1000" height="1000" alt="ASL" src="https://github.com/user-attachments/assets/c7e67f19-8802-45f8-baf4-06c0132f7c46" />**To run the frontend server:**
   * go to terminal and cd frontend
   * in the terminal type "**npm run dev**"
 

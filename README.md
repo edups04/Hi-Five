@@ -1,4 +1,4 @@
-**To run the frontend server:**
+<img width="1000" height="1000" alt="ASL" src="https://github.com/user-attachments/assets/c7e67f19-8802-45f8-baf4-06c0132f7c46" />**To run the frontend server:**
   * go to terminal and cd frontend
   * in the terminal type "**npm run dev**"
 
@@ -33,4 +33,11 @@
 **ASL CHEATSHEET**
 
 _Note: Most alphabets are recognized on the right hand, but if some letters/functions are not getting recognized try the left hand_
-<img width="842" height="480" alt="asl-cheatsheet" src="https://github.com/user-attachments/assets/f6806f97-05f1-46a6-b6a0-1470d6a9641a" />
+<img width="1000" height="1000" alt="ASL" src="https://github.com/user-attachments/assets/685bc2c3-3398-45d4-b438-903b09281c0f" />
+
+----------------------------------------------------------------------------------------------------------
+
+**FSL CHEATSHEET**
+
+_Note: Most alphabets are recognized on the right hand, but if some letters/functions are not getting recognized try the left hand_
+<img width="1000" height="1000" alt="FSL" src="https://github.com/user-attachments/assets/16e341ba-36bd-43a5-83e1-fe70859afecf" />

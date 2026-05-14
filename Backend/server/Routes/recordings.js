@@ -11,6 +11,8 @@ const Recording = require('../models/recording');
 const { isAuthenticated } = require('../middleware/isAuthenticated');
 const { writeLog } = require('../middleware/auditLogger');
 
+const ffmpegStatic = require('ffmpeg-static');
+
 const execFileAsync = promisify(execFile);
 const router = express.Router();
 
@@ -58,10 +60,14 @@ function recordingFilePath(userId, recordingId) {
 }
 
 async function convertToMp4(inputPath, outputPath) {
-    await execFileAsync('ffmpeg', [
+    const ffmpegPath = ffmpegStatic || process.env.FFMPEG_PATH || 'ffmpeg';
+    await execFileAsync(ffmpegPath, [
         '-i', inputPath,
-        '-c:v', 'copy',
+        '-c:v', 'libx264',
+        '-preset', 'fast',
+        '-crf', '23',
         '-c:a', 'aac',
+        '-b:a', '128k',
         '-movflags', '+faststart',
         '-y',
         outputPath,

@@ -4,77 +4,31 @@ import {
   recordingModalStyles as s,
   recordingModalCss as css,
 } from "../styles/pages/RecordingPreview.styles";
-import { fetchRecordingBlobUrl, type RecordingMeta } from "../lib/recordingsClient";
-import { downloadBlob, sanitizeFilename } from "../hooks/useVideoRecorder";
+import { type RecordingMeta } from "../lib/recordingsClient";
+import { sanitizeFilename } from "../hooks/useVideoRecorder";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export interface RecordingPlaybackModalProps {
-  /** When non-null, the modal is open and showing this recording. */
   recording: RecordingMeta | null;
-  /** Called when the modal should close. */
   onClose: () => void;
 }
 
-/**
- * Plays a previously-saved recording fetched from the backend. Reuses the
- * preview modal's styles so it feels consistent with the post-recording flow,
- * but is read-only — name and Discard/Keep buttons are replaced with a
- * Download action.
- *
- * The video stream is fetched as a blob (with the auth header) and turned
- * into a blob URL — we can't put the API URL directly into <video src> because
- * browsers don't send Authorization on media requests.
- */
 export function RecordingPlaybackModal({
   recording,
   onClose,
 }: RecordingPlaybackModalProps) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [videoSrc, setVideoSrc] = useState<string | null>(null);
 
-  // Load the video stream when a recording is set; clean up when it changes.
   useEffect(() => {
-    if (!recording) {
-      setBlobUrl(null);
-      setError(null);
-      return;
-    }
-    let cancelled = false;
-    let createdUrl: string | null = null;
-    setLoading(true);
-    setError(null);
-    fetchRecordingBlobUrl(recording.id)
-      .then((url) => {
-        createdUrl = url;
-        if (cancelled) {
-          // The user closed the modal before the fetch finished — clean up.
-          URL.revokeObjectURL(url);
-          return;
-        }
-        setBlobUrl(url);
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load video");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-      if (createdUrl) URL.revokeObjectURL(createdUrl);
-      setBlobUrl(null);
-    };
+    if (!recording) { setVideoSrc(null); return; }
+    const token = localStorage.getItem("accessToken") || "";
+    setVideoSrc(`${API_URL}/api/recordings/${recording.id}/video?token=${token}`);
   }, [recording]);
 
-  // Esc closes this modal — safe here because there's nothing destructive
-  // about closing playback (the recording is already saved server-side).
   useEffect(() => {
     if (!recording) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [recording, onClose]);
@@ -82,17 +36,11 @@ export function RecordingPlaybackModal({
   if (!recording) return null;
 
   function handleDownload() {
-    if (!blobUrl) return;
-    // Re-fetch the blob from the URL to download it. (We could keep the
-    // original Blob around in state but this is simpler and rarely called.)
-    fetch(blobUrl)
-      .then((r) => r.blob())
-      .then((blob) => {
-        downloadBlob(blob, `${sanitizeFilename(recording!.name)}.webm`);
-      })
-      .catch(() => {
-        /* silent — toast is on the parent if we ever need it */
-      });
+    if (!videoSrc) return;
+    const a = document.createElement("a");
+    a.href = `${videoSrc}&download=true`;
+    a.download = `${sanitizeFilename(recording!.name)}.mp4`;
+    a.click();
   }
 
   return (
@@ -113,15 +61,10 @@ export function RecordingPlaybackModal({
             onClick={onClose}
             aria-label="Close"
             style={{
-              background: "transparent",
-              border: "none",
-              padding: 8,
-              borderRadius: 8,
-              color: "#7A4520",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
+              background: "transparent", border: "none",
+              padding: 8, borderRadius: 8, color: "#7A4520",
+              cursor: "pointer", display: "inline-flex",
+              alignItems: "center", justifyContent: "center",
             }}
           >
             <X size={20} strokeWidth={2} />
@@ -129,20 +72,10 @@ export function RecordingPlaybackModal({
         </div>
 
         <div style={s.videoWrap}>
-          {loading && (
-            <span style={{ color: "#9B7355", fontSize: 14, fontWeight: 600 }}>
-              Loading video...
-            </span>
-          )}
-          {error && !loading && (
-            <span style={{ color: "#E0A48A", fontSize: 14, fontWeight: 600 }}>
-              {error}
-            </span>
-          )}
-          {!loading && !error && blobUrl && (
+          {videoSrc && (
             <video
-              key={blobUrl}
-              src={blobUrl}
+              key={videoSrc}
+              src={videoSrc}
               style={s.video}
               controls
               playsInline
@@ -155,11 +88,8 @@ export function RecordingPlaybackModal({
           <button
             type="button"
             onClick={handleDownload}
-            disabled={!blobUrl}
-            style={{
-              ...s.keepBtn,
-              ...(blobUrl ? {} : s.keepBtnDisabled),
-            }}
+            disabled={!videoSrc}
+            style={{ ...s.keepBtn, ...(videoSrc ? {} : s.keepBtnDisabled) }}
             className="asl-modal-keep-btn"
           >
             <Download size={16} strokeWidth={1.8} />

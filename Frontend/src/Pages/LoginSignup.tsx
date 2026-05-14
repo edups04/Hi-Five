@@ -16,39 +16,42 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState("");
   const navigate = useNavigate();
-  const [open, setOpen] = useState(false); 
+  const [open, setOpen] = useState(false);
 
-  
-const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
-  e.preventDefault();
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
 
-  if (tab === "signup") {
-    axios.post(`${API_URL}/signup`, { username, email, password })
-    .then(result => {
-      console.log(result.data);
-      if(result.data.success) {        
-        alert("Account created! Please log in.");
-        setTab("login");
-      } else {
-        alert(result.data.message);    
-      }
-    })
-    .catch(error => console.log(error));
+    if (tab === "signup") {
+      axios.post(`${API_URL}/signup`, { username, email, password })
+      .then(result => {
+        console.log(result.data);
+        if (result.data.success) {
+          alert("Account created! Please log in.");
+          setTab("login");
+        } else {
+          alert(result.data.message);
+        }
+      })
+      .catch(error => console.log(error));
 
-  } else {
-    axios.post(`${API_URL}/login`, { email, password })
-    .then(result => {
-      console.log(result.data);
-      if (result.data.success) {
-        localStorage.setItem("accessToken", result.data.token);
-        navigate(`/auth-success?token=${result.data.token}`);
-      } else {
-        alert(result.data.message);
-      }
-    })
-    .catch(error => console.log(error));
-  }
-};
+    } else {
+      axios.post(`${API_URL}/login`, { email, password })
+      .then(result => {
+        console.log(result.data);
+        if (result.data.success) {
+          if (result.data.role === 'admin') {
+            sessionStorage.setItem('adminToken', result.data.token);
+            navigate('/admin');
+          } else {
+            navigate("/auth-success", { state: { token: result.data.token } });
+          }
+        } else {
+          alert(result.data.message);
+        }
+      })
+      .catch(error => console.log(error));
+    }
+  };
 
   return (
     <div style={styles.root} className="auth-root">
@@ -97,7 +100,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
 
             {tab === "signup" && (
               <div style={styles.fieldGroup}>
-              <form onSubmit={handleSubmit}></form>
+                <form onSubmit={handleSubmit}></form>
                 <label style={styles.label}>USERNAME</label>
                 <div style={styles.inputWrap}>
                   <span style={styles.inputIcon}><UserRound size={16} color="#C2410C" strokeWidth={1.8} /></span>
@@ -132,11 +135,11 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
               <div style={styles.labelRow}>
                 <label style={styles.label}>PASSWORD</label>
                 {tab === "login" && (
-                                    <button
+                  <button
                     type="button"
                     style={styles.forgotBtn}
                     className="forgot-btn"
-                    onClick={() => setOpen(true)} // 👈 3. Open modal on click
+                    onClick={() => setOpen(true)}
                   >
                     Forgot password?
                   </button>
@@ -174,7 +177,7 @@ const handleSubmit = (e: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTM
             </div>
 
             <button
-              onClick={()=>window.open(`${API_URL}/auth/google`, "_self")}
+              onClick={() => window.open(`${API_URL}/auth/google`, "_self")}
               style={styles.googleBtn}
               className="google-btn"
             >

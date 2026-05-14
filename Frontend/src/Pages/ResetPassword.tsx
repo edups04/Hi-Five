@@ -60,12 +60,10 @@ export default function ResetPassword() {
     <div style={styles.root}>
       <style>{css}</style>
       <div style={styles.card}>
-        {/* Top accent bar */}
         <div style={styles.accentBar} />
 
         {step === "reset" ? (
           <div style={styles.resetPanel}>
-            {/* Icon */}
             <div style={styles.iconWrap}>
               <Lock size={28} color={BROWN} strokeWidth={1.8} />
             </div>
@@ -76,7 +74,6 @@ export default function ResetPassword() {
             </p>
 
             <form onSubmit={handleSubmit}>
-              {/* New Password */}
               <div style={styles.fieldGroup}>
                 <label style={styles.label}>New password</label>
                 <div style={styles.inputWrap}>
@@ -103,7 +100,6 @@ export default function ResetPassword() {
                 </div>
               </div>
 
-              {/* Confirm Password */}
               <div style={error ? styles.fieldGroup : styles.fieldGroupNoError}>
                 <label style={styles.label}>Confirm password</label>
                 <div style={styles.inputWrap}>

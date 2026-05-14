@@ -9,6 +9,33 @@ import { useEffect, useMemo, useState } from 'react';
     import { useToast } from '../components/Toast';
     import { RecordingPlaybackModal } from '../Modals/RecordingPlayback';
 
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+    function RecordingThumbnail({ id }: { id: string }) {
+    const token = localStorage.getItem("accessToken") || "";
+    const src = `${API_URL}/api/recordings/${id}/video?token=${token}`;
+
+    return (
+        <video
+        src={src}
+        style={{
+            width: "100%", height: "100%",
+            objectFit: "cover", display: "block",
+            borderRadius: "10px 10px 0 0",
+        }}
+        preload="metadata"
+        muted
+        playsInline
+        onLoadedMetadata={e => {
+            (e.target as HTMLVideoElement).currentTime = 1;
+        }}
+        onError={e => {
+            (e.target as HTMLVideoElement).style.display = "none";
+        }}
+        />
+    );
+    }
+
     type NavItem = 'record' | 'library' | 'settings';
 
     function Library() {
@@ -17,19 +44,13 @@ import { useEffect, useMemo, useState } from 'react';
     const { user } = getData();
     const [activeNav, setActiveNav] = useState<NavItem>('library');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-    // Library data state. `recordings` is the canonical list; `query` filters
-    // it client-side (no debounce — the list is small, the filter is cheap).
     const [recordings, setRecordings] = useState<RecordingMeta[]>([]);
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [query, setQuery] = useState('');
-    // Currently-playing recording (if any). null means no playback modal open.
     const [playing, setPlaying] = useState<RecordingMeta | null>(null);
 
-    // Fetch recordings on mount. Define `load` so we can re-call it after
-    // mutations (rename, delete) instead of trying to keep state perfectly
-    // synced — refetching is simpler and the list is small.
+
     async function load() {
         setLoading(true);
         setLoadError(null);
@@ -45,10 +66,8 @@ import { useEffect, useMemo, useState } from 'react';
 
     useEffect(() => {
         load();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Client-side filter.
     const filtered = useMemo(() => {
         const q = query.trim().toLowerCase();
         if (!q) return recordings;
@@ -58,13 +77,10 @@ import { useEffect, useMemo, useState } from 'react';
         );
     }, [recordings, query]);
 
-    // ----- Action handlers ---------------------------------------------------
 
     async function handleRename(recording: RecordingMeta) {
-        // Plain prompt() for now. Cheap and works. We can swap for a polished
-        // modal later if you want.
         const next = window.prompt('Rename recording', recording.name);
-        if (next === null) return;                  // user cancelled
+        if (next === null) return;                  
         const trimmed = next.trim();
         if (!trimmed || trimmed === recording.name) return;
         try {
@@ -88,7 +104,6 @@ import { useEffect, useMemo, useState } from 'react';
         }
     }
 
-    // ----- Existing helpers (unchanged) -------------------------------------
 
     const userRaw = localStorage.getItem('user');
     let userObj: any = null;
@@ -292,7 +307,6 @@ import { useEffect, useMemo, useState } from 'react';
                 </div>
                 </header>
 
-                {/* States: loading / error / empty / list */}
                 {loading ? (
                     <div className="home-library-state">
                         <Loader2 size={28} strokeWidth={2.2} className="home-library-spin" color="#C2410C" />
@@ -321,18 +335,21 @@ import { useEffect, useMemo, useState } from 'react';
                     <div style={s.libraryGrid} className="home-library-grid">
                     {filtered.map((item, idx) => (
                         <article style={s.recordCard} className="home-record-card" key={item.id}>
-                        <div style={s.recordPreview} className={`home-record-preview ${idx === 0 ? 'home-record-preview-first' : ''}`}>
-                            <span style={s.durationPill}>{formatDuration(item.durationMs)}</span>
-                            <button
-                                style={s.deleteBtn}
-                                className="home-delete-btn"
-                                aria-label="Delete recording"
-                                onClick={() => handleDelete(item)}
-                            >
+                        <div style={{ ...s.recordPreview, position: "relative", overflow: "hidden", padding: 0 }} className={`home-record-preview ${idx === 0 ? 'home-record-preview-first' : ''}`}>
+                        <RecordingThumbnail id={item.id} />
+                        <span style={{...s.durationPill, position: "absolute", bottom: 8, left: 8, zIndex: 2,
+                        }}>
+                            {formatDuration(item.durationMs)}
+                        </span>
+                        <button
+                            style={{...s.deleteBtn, position: "absolute", top: 8, right: 8, zIndex: 2,
+                            }}
+                            className="home-delete-btn"
+                            aria-label="Delete recording"
+                            onClick={() => handleDelete(item)} >
                             <Trash2 size={18} strokeWidth={2} />
-                            </button>
+                        </button>
                         </div>
-
                         <div style={s.recordMetaRow} className="home-record-meta-row">
                             <div style={{ minWidth: 0, flex: 1 }}>
                             <h3 style={{ ...s.recordTitle, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</h3>
@@ -372,8 +389,6 @@ import { useEffect, useMemo, useState } from 'react';
     );
     }
 
-    // CSS for the new loading/empty/error states. Co-located here so we
-    // don't bloat Library.styles.ts with one-off page states.
     const libraryStateCss = `
         .home-library-state {
             display: flex;

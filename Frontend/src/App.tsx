@@ -8,13 +8,17 @@ import ResetPassword from './Pages/ResetPassword';
 import { ProtectedRoutes, PublicRoutes } from "./ProtectedRoutes";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import AuthSuccess from "./Pages/AuthSuccess";
+import AdminApp from "./Pages/Admin";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* Public Routes */} 
+        {/* Admin — own auth, no ProtectedRoutes wrapper */}
+        <Route path="/admin/*" element={<AdminApp />} />
+
+        {/* Public Routes */}
         <Route element={<PublicRoutes />}>
           <Route path="/" element={<HiFiveLanding />} />
           <Route path="/auth" element={<AuthPage />} />

@@ -151,7 +151,7 @@
         height: "240px",
         background: "radial-gradient(ellipse at center, #1d2735 0%, #05070b 100%)",
     },
-    durationPill: {
+        durationPill: {
         position: "absolute",
         left: "16px",
         bottom: "12px",
@@ -162,19 +162,22 @@
         letterSpacing: "0.01em",
         padding: "3px 10px",
         borderRadius: "999px",
+        zIndex: 2,
     },
-    deleteBtn: {
+        deleteBtn: {
         position: "absolute",
         right: "14px",
-        bottom: "10px",
+        top: "10px",
         border: "none",
-        background: "transparent",
-        color: "#E4B183",
+        background: "rgba(0,0,0,0.45)",
+        color: "#fff",
         cursor: "pointer",
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        padding: 0,
+        padding: "6px",
+        borderRadius: "50%",
+        zIndex: 2,
     },
     recordMetaRow: {
         display: "flex",

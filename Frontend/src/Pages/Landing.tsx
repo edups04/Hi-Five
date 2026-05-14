@@ -37,9 +37,7 @@ export default function HiFiveLanding() {
     <div style={styles.root} className="landing-root">
       <style>{css}</style>
 
-      {/* Main card */}
       <main style={styles.card} ref={heroRef} className="landing-card">
-        {/* Hero */}
         <section
           style={{
             ...styles.hero,
@@ -66,7 +64,6 @@ export default function HiFiveLanding() {
           </button>
         </section>
 
-        {/* Features */}
         <section
           style={{
             ...styles.features,

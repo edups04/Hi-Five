@@ -22,26 +22,47 @@ const AuthSuccess = () => {
 
     useEffect(() => {
         const handleAuth = async () => {
-            const accessToken = location.state?.token;
+            try {
+                let accessToken: string | null = null;
 
-            if (accessToken) {
-                localStorage.setItem("accessToken", accessToken);
-                try {
+                const stateToken = location.state?.token;
+                const urlParams = new URLSearchParams(window.location.search);
+                const code = urlParams.get("code");
+
+                if (stateToken) {
+                    accessToken = stateToken;
+                } else if (code) {
+                    const res = await axios.post(`${API_URL}/auth/exchange-code`, { code });
+                    if (res.data.success) {
+                        accessToken = res.data.token;
+                    } else {
+                        navigate("/auth");
+                        return;
+                    }
+                } else {
+                    navigate("/auth");
+                    return;
+                }
+
+                if (accessToken) {
+                    localStorage.setItem("accessToken", accessToken);
                     const res = await axios.get(`${API_URL}/auth/me`, {
-                        headers: {
-                            Authorization: `Bearer ${accessToken}`
-                        }
+                        headers: { Authorization: `Bearer ${accessToken}` }
                     });
                     if (res.data.success) {
                         setUser(res.data.user);
                         localStorage.setItem("user", JSON.stringify(res.data.user));
                         navigate("/home");
+                    } else {
+                        navigate("/auth");
                     }
-                } catch (error) {
-                    console.error("Error fetching user data:", error);
                 }
+            } catch (error) {
+                console.error("Auth error:", error);
+                navigate("/auth");
             }
         };
+
         handleAuth();
     }, [navigate, setUser, location.state]);
 

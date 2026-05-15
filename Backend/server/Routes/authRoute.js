@@ -1,29 +1,64 @@
 const express = require('express');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { isAuthenticated } = require('../middleware/isAuthenticated');
 
 const router = express.Router();
 
-// Step-1: Redirect to Google Login
+const authCodes = new Map();
+
+function generateAuthCode(userId, email) {
+    const code = crypto.randomBytes(32).toString('hex');
+    authCodes.set(code, {
+        userId,
+        email,
+        expiresAt: Date.now() + 60 * 1000,
+    });
+    setTimeout(() => authCodes.delete(code), 60 * 1000);
+    return code;
+}
+
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
 router.get("/google/callback",
     passport.authenticate("google", { session: false }),
     (req, res) => {
         try {
-            const token = jwt.sign(
-                { id: req.user._id, email: req.user.email },
-                process.env.SECRET_KEY,
-                { expiresIn: "7d" }
-            );
-            res.redirect(`${process.env.CLIENT_URL}/auth-success?token=${token}`);
+            const code = generateAuthCode(req.user._id, req.user.email);
+            res.redirect(`${process.env.CLIENT_URL}/auth-success?code=${code}`);
         } catch (error) {
             console.error("Google login error:", error);
             res.redirect(`${process.env.CLIENT_URL}/auth?error=google_failed`);
         }
     }
 );
+
+router.post("/exchange-code", (req, res) => {
+    const { code } = req.body;
+    if (!code) {
+        return res.status(400).json({ success: false, message: "Missing code" });
+    }
+
+    const entry = authCodes.get(code);
+    if (!entry) {
+        return res.status(401).json({ success: false, message: "Invalid or expired code" });
+    }
+    if (Date.now() > entry.expiresAt) {
+        authCodes.delete(code);
+        return res.status(401).json({ success: false, message: "Code expired" });
+    }
+
+    authCodes.delete(code);
+
+    const token = jwt.sign(
+        { id: entry.userId, email: entry.email },
+        process.env.SECRET_KEY,
+        { expiresIn: "7d" }
+    );
+
+    res.json({ success: true, token });
+});
 
 router.get("/me", isAuthenticated, (req, res) => {
     res.json({ success: true, user: req.user });

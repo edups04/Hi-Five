@@ -7,27 +7,34 @@ passport.use(new GoogleStrategy({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: "/auth/google/callback"
     },
-    async(accessToken, refreshToken, profile, cb) => {
-    console.log(profile);
+    async (accessToken, refreshToken, profile, cb) => {
+        try {
+            const email = profile.emails[0].value;
 
-    try {    
-        let user = await UsersModel.findOneAndUpdate({ googleId: profile.id }, {isLoggedIn:true});
+            let user = await UsersModel.findOne({
+                $or: [{ googleId: profile.id }, { email }]
+            });
 
-        if (!user) {
-            user = await UsersModel.create({
-                googleId: profile.id,
-                username: profile.displayName,
-                email: profile.emails[0].value,
-                avatar: profile.photos[0].value,
-                isVerified: true,
-            })
+            if (user) {
+                user.googleId = profile.id;
+                user.isLoggedIn = true;
+                user.avatar = user.avatar || profile.photos[0].value;
+                user.isVerified = true;
+                await user.save();
+            } else {
+                user = await UsersModel.create({
+                    googleId: profile.id,
+                    username: profile.displayName,
+                    email,
+                    avatar: profile.photos[0].value,
+                    isVerified: true,
+                });
+            }
+
+            return cb(null, user);
+
+        } catch (err) {
+            return cb(err, null);
         }
-
-        return cb(null, user);
-        
-    } catch (err) {
-        return cb(err, null);
-    }
-
     }
 ));

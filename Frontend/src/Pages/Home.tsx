@@ -160,6 +160,9 @@ function Home() {
     if (videoRef.current) videoRef.current.srcObject = null;
     setIsRecording(false);
     setSeconds(0);
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
   }
 
   async function handleKeep(name: string) {

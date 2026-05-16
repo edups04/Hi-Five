@@ -462,13 +462,11 @@ export const homeCss = `
 
   @media (max-width: 600px) {
     .home-try-badge {
-      white-space: nowrap !important;
-      width: auto !important;
-      max-width: none !important;
-      margin-right: 40px !important;
+        white-space: nowrap !important;
+        right: 52px !important;
     }
     .asl-fs-btn {
-      right: 12px !important;
+        right: 12px !important;
     }
   }
 
@@ -538,14 +536,16 @@ export const homeCss = `
     .home-title-wrap p {
       font-size: 12px !important;
     }
-    .home-rec-badge,
-    .home-try-badge {
-      top: 10px !important;
-      font-size: 11px !important;
-      padding: 5px 10px !important;
+    .home-rec-badge {
+        top: 10px !important;
+        font-size: 11px !important;
+        padding: 5px 10px !important;
     }
     .home-try-badge {
-      right: 10px !important;
+        top: 10px !important;
+        right: 52px !important;
+        font-size: 11px !important;
+        padding: 5px 10px !important;
     }
     .home-start-text {
       font-size: 14px !important;
@@ -579,10 +579,10 @@ export const homeCss = `
       padding: 6px 10px !important;
     }
     .asl-fs-btn {
-      width: 32px !important;
-      height: 32px !important;
-      top: 10px !important;
-      right: 110px !important;
+        width: 32px !important;
+        height: 32px !important;
+        top: 10px !important;
+        right: 10px !important;
     }
   }
 `;

@@ -354,7 +354,7 @@ function Home() {
                 </div>
               )}
 
-              <div style={{ ...s.tryBadge, cursor: 'pointer' }} className="home-try-badge asl-fs-btn" onClick={() => setShowASLOverlay(true)}>
+              <div style={{ ...s.tryBadge, cursor: 'pointer' }} className="home-try-badge" onClick={() => setShowASLOverlay(true)}>
                 <Sparkles size={14} strokeWidth={1.8} /> Try It Out
               </div>
 

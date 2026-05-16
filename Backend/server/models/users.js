@@ -6,11 +6,13 @@ const UserSchema = new mongoose.Schema({
     password: { type: String },
     googleId: { type: String },
     avatar: { type: String },
+    phone: { type: String, default: null },
+    twoFactorEnabled: { type: Boolean, default: false },
+    twoFactorSecret: { type: String, default: null },
     isVerified: { type: Boolean, default: false },
     isLoggedIn: { type: Boolean, default: false },
     token: { type: String, default: null },
 }, { timestamps: true });
-
 
 const UsersModel = mongoose.model('Users', UserSchema);
 module.exports = UsersModel;

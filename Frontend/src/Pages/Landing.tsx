@@ -54,7 +54,7 @@ export default function HiFiveLanding() {
           <p style={styles.tagline}>Signing made visible</p>
 
           <p style={styles.body}>
-            Hi-Five instantly translates ASL to captions,
+            Hi-Five instantly translates ASL & FSL to captions,
             making video creations more inclusive and faster
             for everyone.
           </p>

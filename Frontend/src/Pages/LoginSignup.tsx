@@ -109,7 +109,9 @@ export default function AuthPage() {
         const onChange = (index: number, value: string) => {
             const digit = value.replace(/\D/g, '').slice(-1);
             const next = [...otp]; next[index] = digit; setOtp(next);
-            if (digit && index < 5) refs.current[index + 1]?.focus();
+            if (digit && index < 5) {
+                setTimeout(() => refs.current[index + 1]?.focus(), 0);
+            }
         };
         const onKeyDown = (index: number, e: React.KeyboardEvent) => {
             if (e.key === 'Backspace' && !otp[index] && index > 0) refs.current[index - 1]?.focus();
@@ -241,7 +243,6 @@ export default function AuthPage() {
         }
     }
 
-    // ── Shared OTP box renderer ────────────────────────────────────────────────
     function OtpBoxes({
         otp, refs, handlers
     }: {
@@ -254,13 +255,17 @@ export default function AuthPage() {
                 {otp.map((digit, i) => (
                     <input
                         key={i}
-                        ref={el => { refs.current[i] = el; }}
+                        ref={el => {
+                            refs.current[i] = el;
+                            if (i === 0 && el && !otp.some(d => d)) el.focus();
+                        }}
                         type="text"
                         inputMode="numeric"
                         maxLength={1}
                         value={digit}
                         onChange={e => handlers.onChange(i, e.target.value)}
                         onKeyDown={e => handlers.onKeyDown(i, e)}
+                        onClick={() => refs.current[i]?.select()}
                         style={{ ...st.otpInput, ...(digit ? st.otpInputFilled : {}) }}
                         className="otp-input"
                     />

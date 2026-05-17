@@ -192,7 +192,7 @@ app.post('/forgot-password', async (req, res) => {
                     <h2 style="color: #C2410C; font-size: 22px; margin: 0 0 8px;">Password Reset</h2>
                     <p style="color: #9B7355; font-size: 14px; margin: 0 0 24px;">You requested a password reset for your Hi-Five account.</p>
                     <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${user._id}/${token}"
-                       style="display: inline-block; background: #92400E; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 14px;">
+                    style="display: inline-block; background: #92400E; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 14px;">
                         Reset Password
                     </a>
                     <p style="color: #C8A882; font-size: 12px; margin: 24px 0 0;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>

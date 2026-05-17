@@ -177,48 +177,44 @@ app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     const ip = req.ip;
 
-    UsersModel.findOne({ email })
-    .then(user => {
+    try {
+        const user = await UsersModel.findOne({ email });
         if (!user) return res.send({ Status: "Account not found" });
 
         const token = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET_KEY, { expiresIn: "1h" });
 
-        try {
-            await resend.emails.send({
-                from: `Hi-Five <onboarding@resend.dev>`,
-                to: user.email,
-                subject: 'Password Reset Request — Hi-Five',
-                html: `
-                    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #FAF0E8; border-radius: 16px;">
-                        <h2 style="color: #C2410C; font-size: 22px; margin: 0 0 8px;">Password Reset</h2>
-                        <p style="color: #9B7355; font-size: 14px; margin: 0 0 24px;">You requested a password reset for your Hi-Five account.</p>
-                        <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${user._id}/${token}"
-                        style="display: inline-block; background: #92400E; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 14px;">
-                            Reset Password
-                        </a>
-                        <p style="color: #C8A882; font-size: 12px; margin: 24px 0 0;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
-                    </div>
-                `,
-            });
-            await writeLog({
-                actor: email,
-                actorId: user._id,
-                type: 'User Action',
-                severity: 'INFO',
-                action: 'user.password_reset_requested',
-                description: `Password reset email sent to "${email}"`,
-                ip,
-            });
-            return res.send({ Status: "Password reset email sent" });
-        } catch (error) {
-            console.error('Email send failed:', error);
-            return res.status(500).send({ Status: "Failed to send email. Please try again later." });
-        }
-    })
-    .catch(err => {
+        await resend.emails.send({
+            from: `Hi-Five <onboarding@resend.dev>`,
+            to: user.email,
+            subject: 'Password Reset Request — Hi-Five',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #FAF0E8; border-radius: 16px;">
+                    <h2 style="color: #C2410C; font-size: 22px; margin: 0 0 8px;">Password Reset</h2>
+                    <p style="color: #9B7355; font-size: 14px; margin: 0 0 24px;">You requested a password reset for your Hi-Five account.</p>
+                    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${user._id}/${token}"
+                       style="display: inline-block; background: #92400E; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 14px;">
+                        Reset Password
+                    </a>
+                    <p style="color: #C8A882; font-size: 12px; margin: 24px 0 0;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+                </div>
+            `,
+        });
+
+        await writeLog({
+            actor: email,
+            actorId: user._id,
+            type: 'User Action',
+            severity: 'INFO',
+            action: 'user.password_reset_requested',
+            description: `Password reset email sent to "${email}"`,
+            ip,
+        });
+
+        return res.send({ Status: "Password reset email sent" });
+    } catch (err) {
         console.error('forgot-password error:', err);
-        res.status(500).send({ Status: "Server error" });
-    });
+        res.status(500).send({ Status: "Failed to send email. Please try again later." });
+    }
 });
 
 app.post('/reset-password/:id/:token', (req, res) => {

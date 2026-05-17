@@ -2,13 +2,15 @@ import { useRef, useState } from "react";
 import logo from "../assets/Hi-five.png";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Eye, EyeOff, Lock, Mail, Phone, UserRound, X, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, UserRound, X, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { loginSignupCss as css, loginSignupStyles as st } from "../styles/pages/LoginSignup.styles";
 import Google from "../assets/google-logo.png";
 import { PasswordResetModal } from "../Modals/SendPasswordReset";
 import { QRCodeSVG } from "qrcode.react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const TRUSTED_DEVICE_KEY = "hifive_trusted_device";
+const TRUSTED_DEVICE_EXPIRY_DAYS = 7;
 
 type LegalModal = 'none' | 'privacy' | 'terms';
 type TwoFAStep = 'qr' | 'otp' | 'success';
@@ -57,19 +59,38 @@ const PASSWORD_RULES = [
 
 function passwordValid(p: string) { return PASSWORD_RULES.every(r => r.test(p)); }
 
+function getTrustedDevice(userId: string): boolean {
+    try {
+        const raw = localStorage.getItem(`${TRUSTED_DEVICE_KEY}_${userId}`);
+        if (!raw) return false;
+        const { expiry } = JSON.parse(raw);
+        if (Date.now() > expiry) { localStorage.removeItem(`${TRUSTED_DEVICE_KEY}_${userId}`); return false; }
+        return true;
+    } catch { return false; }
+}
+
+function setTrustedDevice(userId: string) {
+    const expiry = Date.now() + TRUSTED_DEVICE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+    localStorage.setItem(`${TRUSTED_DEVICE_KEY}_${userId}`, JSON.stringify({ expiry }));
+}
+
+export function clearTrustedDevice(userId: string) {
+    localStorage.removeItem(`${TRUSTED_DEVICE_KEY}_${userId}`);
+}
+
 export default function AuthPage() {
     const [tab, setTab] = useState<"login" | "signup">("login");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [username, setUsername] = useState("");
-    const [phone, setPhone] = useState("");
     const [agreedPrivacy, setAgreedPrivacy] = useState(false);
     const [agreedTerms, setAgreedTerms] = useState(false);
     const [legalModal, setLegalModal] = useState<LegalModal>('none');
     const [open, setOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [passwordTouched, setPasswordTouched] = useState(false);
+    const [finishError, setFinishError] = useState<string | null>(null);
 
     const [show2FA, setShow2FA] = useState(false);
     const [twoFAStep, setTwoFAStep] = useState<TwoFAStep>('qr');
@@ -86,18 +107,21 @@ export default function AuthPage() {
     const [loginOtpError, setLoginOtpError] = useState<string | null>(null);
     const [verifyingLogin, setVerifyingLogin] = useState(false);
     const loginOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
-    const [finishError, setFinishError] = useState<string | null>(null);
 
     const navigate = useNavigate();
 
-    function resetSignupFields() {
-        setUsername(""); setPhone("");
+    function clearForm() {
+        setEmail(""); setPassword(""); setUsername("");
         setAgreedPrivacy(false); setAgreedTerms(false);
+        setError(null); setPasswordTouched(false); setFinishError(null);
+    }
+
+    function resetSignupFields() {
+        setUsername(""); setAgreedPrivacy(false); setAgreedTerms(false);
         setError(null); setPasswordTouched(false);
         setSignupOtp(Array(6).fill(''));
         setSignupOtpError(null); setTwoFAStep('qr');
-        setQrSecret(''); setQrUrl('');
-        setFinishError(null); 
+        setQrSecret(''); setQrUrl(''); setFinishError(null);
     }
 
     function makeOtpHandlers(
@@ -108,9 +132,7 @@ export default function AuthPage() {
         const onChange = (index: number, value: string) => {
             const digit = value.replace(/\D/g, '').slice(-1);
             const next = [...otp]; next[index] = digit; setOtp(next);
-            if (digit && index < 5) {
-                setTimeout(() => refs.current[index + 1]?.focus(), 0);
-            }
+            if (digit && index < 5) setTimeout(() => refs.current[index + 1]?.focus(), 0);
         };
         const onKeyDown = (index: number, e: React.KeyboardEvent) => {
             if (e.key === 'Backspace' && !otp[index] && index > 0) refs.current[index - 1]?.focus();
@@ -135,24 +157,21 @@ export default function AuthPage() {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.trim())) { setError("Please enter a valid email address."); return; }
         if (!passwordValid(password)) { setError("Password does not meet all requirements."); return; }
-        if (!phone.trim()) { setError("Please enter your phone number."); return; }
         if (!agreedPrivacy || !agreedTerms) { setError("Please agree to the Privacy Policy and Terms of Service."); return; }
+
+        try {
+            const check = await axios.post(`${API_URL}/check-duplicate`, { email, username });
+            if (!check.data.available) { setError(check.data.message); return; }
+        } catch {
+            setError("Network error. Please try again.");
+            return;
+        }
 
         try {
             const res = await axios.post(`${API_URL}/setup-2fa`, { email, username });
             if (res.data.success) {
                 setQrSecret(res.data.secret);
                 setQrUrl(res.data.otpauthUrl);
-                try {
-                    const check = await axios.post(`${API_URL}/check-duplicate`, { email, username });
-                    if (!check.data.available) {
-                        setError(check.data.message);
-                        return;
-                    }
-                } catch {
-                    setError("Network error. Please try again.");
-                    return;
-                }
                 setTwoFAStep('qr');
                 setSignupOtp(Array(6).fill(''));
                 setSignupOtpError(null);
@@ -185,25 +204,23 @@ export default function AuthPage() {
     }
 
     async function handleFinish2FA() {
-        const fullPhone = `+63${phone.trim()}`;
         setFinishError(null);
         try {
             const result = await axios.post(`${API_URL}/signup`, {
                 username, email, password,
-                phone: fullPhone,
                 twoFactorEnabled: true,
                 twoFactorSecret: qrSecret,
             });
             if (result.data.success) {
                 setShow2FA(false);
                 setTab("login");
+                clearForm();
                 resetSignupFields();
             } else {
                 setFinishError(result.data.message || "Signup failed.");
             }
         } catch (err: any) {
-            const msg = err?.response?.data?.message || "Network error. Please try again.";
-            setFinishError(msg);
+            setFinishError(err?.response?.data?.message || "Network error. Please try again.");
         }
     }
 
@@ -218,10 +235,31 @@ export default function AuthPage() {
                         sessionStorage.setItem('adminUsername', result.data.username || 'Admin');
                         navigate('/admin');
                     } else if (result.data.requires2FA) {
-                        setLoginUserId(result.data.userId);
-                        setLoginOtp(Array(6).fill(''));
-                        setLoginOtpError(null);
-                        setShowLogin2FA(true);
+                        const userId = result.data.userId;
+                        if (getTrustedDevice(userId)) {
+                            axios.post(`${API_URL}/verify-2fa-trusted`, { userId })
+                                .then(r => {
+                                    if (r.data.success) {
+                                        navigate("/auth-success", { state: { token: r.data.token } });
+                                    } else {
+                                        setLoginUserId(userId);
+                                        setLoginOtp(Array(6).fill(''));
+                                        setLoginOtpError(null);
+                                        setShowLogin2FA(true);
+                                    }
+                                })
+                                .catch(() => {
+                                    setLoginUserId(userId);
+                                    setLoginOtp(Array(6).fill(''));
+                                    setLoginOtpError(null);
+                                    setShowLogin2FA(true);
+                                });
+                        } else {
+                            setLoginUserId(userId);
+                            setLoginOtp(Array(6).fill(''));
+                            setLoginOtpError(null);
+                            setShowLogin2FA(true);
+                        }
                     } else {
                         navigate("/auth-success", { state: { token: result.data.token } });
                     }
@@ -240,6 +278,7 @@ export default function AuthPage() {
         try {
             const res = await axios.post(`${API_URL}/verify-2fa-login`, { userId: loginUserId, token: code });
             if (res.data.success) {
+                setTrustedDevice(loginUserId);
                 setShowLogin2FA(false);
                 navigate("/auth-success", { state: { token: res.data.token } });
             } else {
@@ -301,8 +340,8 @@ export default function AuthPage() {
 
                 <div style={st.right} className="auth-right">
                     <div style={st.tabs} className="auth-tabs">
-                        <button style={{ ...st.tab, ...(tab === "login" ? st.tabActive : st.tabInactive) }} className="tab-btn" onClick={() => { setTab("login"); setError(null); setPasswordTouched(false); setEmail(""); setPassword(""); setUsername(""); setPhone(""); setAgreedPrivacy(false); setAgreedTerms(false); }}>Log In</button>
-                        <button style={{ ...st.tab, ...(tab === "signup" ? st.tabActive : st.tabInactive) }} className="tab-btn" onClick={() => { setTab("signup"); setError(null); setPasswordTouched(false); setEmail(""); setPassword(""); setUsername(""); setPhone(""); setAgreedPrivacy(false); setAgreedTerms(false); }}>Sign Up</button>
+                        <button style={{ ...st.tab, ...(tab === "login" ? st.tabActive : st.tabInactive) }} className="tab-btn" onClick={() => { setTab("login"); clearForm(); }}>Log In</button>
+                        <button style={{ ...st.tab, ...(tab === "signup" ? st.tabActive : st.tabInactive) }} className="tab-btn" onClick={() => { setTab("signup"); clearForm(); }}>Sign Up</button>
                     </div>
 
                     <div style={st.formWrap} className="auth-form-wrap">
@@ -366,31 +405,20 @@ export default function AuthPage() {
                         </div>
 
                         {tab === "signup" && (
-                            <>
-                                <div style={st.fieldGroup}>
-                                    <label style={st.label}>PHONE NUMBER</label>
-                                    <div style={st.inputWrap}>
-                                        <span style={st.inputIcon}><Phone size={16} color="#C2410C" strokeWidth={1.8} /></span>
-                                        <span style={st.phonePrefix}>+63</span>
-                                        <input style={st.input} type="tel" placeholder="9XXXXXXXXX" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} className="auth-input" maxLength={10} />
-                                    </div>
-                                </div>
-
-                                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
-                                    <label style={st.checkboxRow}>
-                                        <input type="checkbox" checked={agreedPrivacy} onChange={e => setAgreedPrivacy(e.target.checked)} style={{ marginTop: 2, accentColor: "#F97316", flexShrink: 0 }} />
-                                        <span style={st.checkboxLabel}>I have read and agree to the{" "}
-                                            <button type="button" style={st.legalLink} onClick={() => setLegalModal('privacy')}>Privacy Policy</button>
-                                        </span>
-                                    </label>
-                                    <label style={st.checkboxRow}>
-                                        <input type="checkbox" checked={agreedTerms} onChange={e => setAgreedTerms(e.target.checked)} style={{ marginTop: 2, accentColor: "#F97316", flexShrink: 0 }} />
-                                        <span style={st.checkboxLabel}>I have read and agree to the{" "}
-                                            <button type="button" style={st.legalLink} onClick={() => setLegalModal('terms')}>Terms of Service</button>
-                                        </span>
-                                    </label>
-                                </div>
-                            </>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
+                                <label style={st.checkboxRow}>
+                                    <input type="checkbox" checked={agreedPrivacy} onChange={e => setAgreedPrivacy(e.target.checked)} style={{ marginTop: 2, accentColor: "#F97316", flexShrink: 0 }} />
+                                    <span style={st.checkboxLabel}>I have read and agree to the{" "}
+                                        <button type="button" style={st.legalLink} onClick={() => setLegalModal('privacy')}>Privacy Policy</button>
+                                    </span>
+                                </label>
+                                <label style={st.checkboxRow}>
+                                    <input type="checkbox" checked={agreedTerms} onChange={e => setAgreedTerms(e.target.checked)} style={{ marginTop: 2, accentColor: "#F97316", flexShrink: 0 }} />
+                                    <span style={st.checkboxLabel}>I have read and agree to the{" "}
+                                        <button type="button" style={st.legalLink} onClick={() => setLegalModal('terms')}>Terms of Service</button>
+                                    </span>
+                                </label>
+                            </div>
                         )}
 
                         {error && <p style={st.errorText}>{error}</p>}
@@ -418,7 +446,6 @@ export default function AuthPage() {
             {show2FA && (
                 <div style={st.modalBackdrop}>
                     <div style={st.modalCard} onClick={e => e.stopPropagation()}>
-
                         {twoFAStep === 'qr' && (
                             <>
                                 <div style={st.modalHeader}>
@@ -481,9 +508,7 @@ export default function AuthPage() {
                                 <div style={st.successIcon}><CheckCircle2 size={40} color="#16a34a" strokeWidth={2} /></div>
                                 <h2 style={st.successTitle}>You're all set!</h2>
                                 <p style={st.successSub}>Two-factor authentication has been successfully enabled. Your account is now more secure.</p>
-                                {finishError && (
-                                    <p style={{ ...st.errorText, textAlign: "center", margin: "0" }}>{finishError}</p>
-                                )}
+                                {finishError && <p style={{ ...st.errorText, textAlign: "center", margin: "0" }}>{finishError}</p>}
                                 <button style={{ ...st.primaryBtn, padding: "13px 32px", fontSize: 15 }} onClick={handleFinish2FA} className="auth-primary-btn">
                                     Continue to Login
                                 </button>

@@ -1,9 +1,10 @@
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Eye, EyeOff, ListVideo, Lock, LogOut, Menu, Pencil, PlusCircle, Settings as SettingsIcon, Video, X } from 'lucide-react';
+import { Camera, Eye, EyeOff, ListVideo, Lock, LogOut, Menu, Pencil, Phone, PlusCircle, Settings as SettingsIcon, Video, X } from 'lucide-react';
 import logo from '../assets/Hi-five.png';
 import { getData } from '../context/userContext';
 import { settingsCss as css, settingsStyles as s } from '../styles/pages/Settings.styles';
+import { clearTrustedDevice } from './LoginSignup';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -17,6 +18,8 @@ interface UserProfile {
 	avatar?: string;
 	googleId?: string;
 	createdAt?: string;
+	phone?: string;
+	_id?: string;
 	profileObj?: { name?: string; givenName?: string; email?: string; imageUrl?: string; };
 }
 
@@ -42,6 +45,7 @@ function SettingsPage() {
 	const [editingPassword, setEditingPassword] = useState(false);
 	const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
 	const [usernameInput, setUsernameInput] = useState('');
+	const [phoneInput, setPhoneInput] = useState('');
 	const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
 	const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
 	const [profileStatus, setProfileStatus] = useState<{ text: string; ok: boolean } | null>(null);
@@ -62,6 +66,7 @@ function SettingsPage() {
 
 	const displayName = currentUser?.username || currentUser?.name || currentUser?.given_name || currentUser?.displayName || currentUser?.profileObj?.name || currentUser?.profileObj?.givenName || 'Username';
 	const displayEmail = currentUser?.email || currentUser?.profileObj?.email || 'name@gmail.com';
+	const displayPhone = currentUser?.phone || '';
 	const picture = currentUser?.avatar || currentUser?.picture || currentUser?.profileObj?.imageUrl || null;
 	const avatarInitial = String(displayName).trim().charAt(0).toUpperCase() || 'U';
 	const isGoogleUser = !!currentUser?.googleId;
@@ -78,6 +83,7 @@ function SettingsPage() {
 
 	function startEditingProfile() {
 		setUsernameInput(displayName);
+		setPhoneInput(displayPhone.replace('+63', ''));
 		setPreviewAvatar(null);
 		setProfileStatus(null);
 		setEditingProfile(true);
@@ -139,6 +145,8 @@ function SettingsPage() {
 			const body: Record<string, string> = {};
 			if (usernameInput.trim() && usernameInput.trim() !== displayName) body.username = usernameInput.trim();
 			if (previewAvatar) body.avatar = previewAvatar;
+			const newPhone = phoneInput.trim() ? `+63${phoneInput.trim()}` : '';
+			if (newPhone !== displayPhone) body.phone = newPhone;
 			if (Object.keys(body).length === 0) { cancelEditingProfile(); return; }
 			const res = await fetch(`${API_URL}/update-profile`, {
 				method: 'POST',
@@ -179,6 +187,7 @@ function SettingsPage() {
 			});
 			const data = await res.json();
 			if (data.success) {
+				if (currentUser?._id) clearTrustedDevice(currentUser._id);
 				setPasswordStatus({ text: 'Password updated successfully.', ok: true });
 				setTimeout(() => { setEditingPassword(false); setPasswordStatus(null); setNewPasswordTouched(false); }, 1000);
 			} else {
@@ -203,6 +212,7 @@ function SettingsPage() {
 			});
 			const data = await res.json();
 			if (data.success) {
+				if (currentUser?._id) clearTrustedDevice(currentUser._id);
 				localStorage.removeItem('accessToken');
 				localStorage.removeItem('user');
 				navigate('/auth');
@@ -365,6 +375,32 @@ function SettingsPage() {
 									<Lock size={14} strokeWidth={2} style={s.lockIcon} />
 								</div>
 							</div>
+							<div style={s.field}>
+								<label style={s.label}>Phone Number <span style={{ fontSize: 10, color: '#C8A882', fontWeight: 600 }}>(optional)</span></label>
+								{editingProfile ? (
+									<div style={{ display: 'flex', alignItems: 'center', background: '#F6E3D8', border: '1.5px solid #F97316', borderRadius: 10, overflow: 'hidden', minHeight: 44 }}>
+										<span style={{ padding: '0 8px 0 12px', fontSize: 13, fontWeight: 700, color: '#9B7355', borderRight: '1px solid #F0D9C8', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+											<Phone size={14} color="#C2410C" strokeWidth={1.8} /> +63
+										</span>
+										<input
+											style={{ ...s.input, border: 'none', borderRadius: 0, background: 'transparent', paddingLeft: 10 }}
+											className="settings-input"
+											type="tel"
+											placeholder="9XXXXXXXXX (optional)"
+											value={phoneInput}
+											onChange={e => setPhoneInput(e.target.value.replace(/\D/g, '').slice(0, 10))}
+											maxLength={10}
+										/>
+									</div>
+								) : (
+									<input
+										style={s.input}
+										className="settings-input"
+										value={displayPhone ? displayPhone.replace('+63', '+63 ') : 'Not set'}
+										readOnly
+									/>
+								)}
+							</div>
 						</div>
 
 						{profileStatus && (
@@ -390,7 +426,6 @@ function SettingsPage() {
 						{editingPassword ? (
 							<>
 								<div style={s.inputGrid} className="settings-input-grid">
-
 									<div style={{ ...s.field, gridColumn: '1 / -1' }}>
 										<label style={s.label}>Current Password</label>
 										<div style={s.passwordWrap}>

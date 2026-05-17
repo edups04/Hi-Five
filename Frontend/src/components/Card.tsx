@@ -1,11 +1,9 @@
-/* <img src="/Hi-five.png" alt="Hi-Five hand" style={S.icon} /> */
 import type { CSSProperties } from "react";
 import logo from '../assets/Hi-five.png';
 
 export default function HeroCard() {
   return (
     <div style={S.card}>
-      {/* Hand icon - replace src with your actual image */}
       
       <img src={logo} alt="Hi-Five" style={S.icon} />
 

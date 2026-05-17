@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-// Backend URL: from env in production (Vercel), falls back to localhost for dev.
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 type Step = "email" | "sent";
@@ -11,7 +10,6 @@ const BROWN_DARK = "#6B2A10";
 const BROWN_LIGHT = "#FDF0E8";
 const BROWN_BORDER = "#E8C9B0";
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
 
 const CloseIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -42,7 +40,6 @@ const InputMailIcon = () => (
   </svg>
 );
 
-// ─── Modal ────────────────────────────────────────────────────────────────────
 
 interface PasswordResetModalProps {
   isOpen: boolean;
@@ -56,14 +53,12 @@ export function PasswordResetModal({ isOpen, onClose }: PasswordResetModalProps)
   const [loading, setLoading] = useState(false);
 
 
-  // ESC to close
   useEffect(() => {
     const handler = (e: globalThis.KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
     if (isOpen) window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [isOpen]);
 
-  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -123,10 +118,8 @@ const handleSend = async () => {
           fontFamily: "'Manrope', sans-serif",
         }}
       >
-        {/* Top accent bar */}
         <div style={{ height: 4, background: `linear-gradient(90deg, ${BROWN_DARK}, ${BROWN}, #c4622a)` }} />
 
-        {/* Close button */}
         <button
           onClick={handleClose}
           aria-label="Close"
@@ -144,10 +137,8 @@ const handleSend = async () => {
           <CloseIcon />
         </button>
 
-        {/* ── Step 1: Enter Email ── */}
         {step === "email" && (
           <div style={{ padding: "36px 36px 32px" }}>
-            {/* Icon */}
             <div style={{
               width: 72, height: 72, borderRadius: 20, background: BROWN_LIGHT,
               display: "flex", alignItems: "center", justifyContent: "center",

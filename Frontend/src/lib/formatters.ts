@@ -1,9 +1,3 @@
-// src/lib/formatters.ts
-//
-// Tiny formatting helpers shared by the Library page (and possibly other
-// components later). Pure functions, no React.
-
-/** Format a date as "Today · 04/29/26" or "Yesterday · 04/28/26" or "04/14/26". */
 export function formatRelativeDate(iso: string | Date): string {
   const date = typeof iso === "string" ? new Date(iso) : iso;
   const now = new Date();
@@ -25,7 +19,6 @@ export function formatRelativeDate(iso: string | Date): string {
   return numeric;
 }
 
-/** Format a millisecond duration as "MM:SS" (or "H:MM:SS" if over an hour). */
 export function formatDuration(ms: number): string {
   if (!ms || ms < 0) return "00:00";
   const totalSec = Math.floor(ms / 1000);
@@ -37,7 +30,6 @@ export function formatDuration(ms: number): string {
   return `${pad(m)}:${pad(s)}`;
 }
 
-/** Pluralize the recording-count subtitle. */
 export function recordingCountLabel(n: number): string {
   if (n === 0) return "No recordings yet";
   if (n === 1) return "1 recording total";

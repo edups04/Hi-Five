@@ -133,6 +133,16 @@ app.post('/signup', async (req, res) => {
     const failed = passwordRules.find(r => !r.test(password));
     if (failed) return res.status(400).json({ success: false, message: failed.msg });
 
+    const existingEmail = await UsersModel.findOne({ email });
+    if (existingEmail) {
+        return res.status(400).json({ success: false, message: "An account with this email already exists." });
+    }
+
+    const existingUsername = await UsersModel.findOne({ username });
+    if (existingUsername) {
+        return res.status(400).json({ success: false, message: "This username is already taken. Please choose another." });
+    }
+
     bcrypt.hash(password, 10)
     .then(hash => {
         UsersModel.create({
@@ -155,7 +165,11 @@ app.post('/signup', async (req, res) => {
             });
             res.status(201).json({ success: true, message: "Account created", user });
         })
-        .catch(err => res.status(400).json({ success: false, message: err.message }));
+        .catch(err => { const msg = err.code === 11000 ? err.keyPattern?.email
+        ? "An account with this email already exists."
+        : "This username is already taken. Please choose another."
+        : err.message; res.status(400).json({ success: false, message: msg });
+});
     })
     .catch(err => res.status(500).json({ success: false, message: err.message }));
 });
@@ -432,6 +446,23 @@ app.post('/verify-2fa-login', async (req, res) => {
         res.json({ success: true, token: jwtToken });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+app.post('/check-duplicate', async (req, res) => {
+    const { email, username } = req.body;
+    try {
+        const existingEmail = await UsersModel.findOne({ email });
+        if (existingEmail) {
+            return res.json({ available: false, message: "An account with this email already exists." });
+        }
+        const existingUsername = await UsersModel.findOne({ username });
+        if (existingUsername) {
+            return res.json({ available: false, message: "This username is already taken. Please choose another." });
+        }
+        res.json({ available: true });
+    } catch (error) {
+        res.status(500).json({ available: false, message: "Server error. Please try again." });
     }
 });
 

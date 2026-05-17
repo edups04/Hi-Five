@@ -1,20 +1,3 @@
-/**
- * useVideoRecorder.ts
- *
- * Records the webcam video with the live ASL subtitle burned into each frame.
- * When stopped, hands the blob back via an onRecorded callback — the caller
- * decides whether to download it, show a preview modal, or upload it.
- *
- * Usage:
- *   const recorder = useVideoRecorder();
- *   recorder.start(stream, () => sentenceRef.current, (blob) => {
- *     setPendingBlob(blob);  // open modal, download, upload — your call
- *   });
- *
- *   // later:
- *   recorder.stop();
- */
-
 import { useCallback, useRef } from "react";
 
 export interface UseVideoRecorderResult {
@@ -42,8 +25,6 @@ function pickMimeType(): string | undefined {
   return undefined;
 }
 
-/** Download a blob as a file with the given filename. Exported as a helper
- *  so the modal can trigger a download with the user's chosen name. */
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -56,13 +37,12 @@ export function downloadBlob(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
-/** Sanitize a user-typed name so it's safe as a filename on Windows/macOS. */
 export function sanitizeFilename(name: string): string {
   return (
     name
       .trim()
-      .replace(/[\\/:*?"<>|]/g, "")        // illegal on Windows
-      .replace(/\s+/g, " ")                // collapse internal whitespace
+      .replace(/[\\/:*?"<>|]/g, "")        
+      .replace(/\s+/g, " ")                
       .slice(0, 80) || "recording"
   );
 }
@@ -109,8 +89,6 @@ export function useVideoRecorder(): UseVideoRecorderResult {
       startedRef.current = true;
       onRecordedRef.current = onRecorded;
 
-      // Offscreen <video> attached to the DOM so loadedmetadata fires
-      // reliably on Chromium-based browsers.
       const video = document.createElement("video");
       video.muted = true;
       video.playsInline = true;
@@ -180,7 +158,6 @@ export function useVideoRecorder(): UseVideoRecorderResult {
           });
           chunksRef.current = [];
 
-          // Hand the blob to the page. The page decides what to do with it.
           const cb = onRecordedRef.current;
           if (cb && blob.size > 0) {
             cb(blob);
@@ -233,8 +210,6 @@ export function useVideoRecorder(): UseVideoRecorderResult {
     const r = recorderRef.current;
     if (r && r.state !== "inactive") {
       console.log("[recorder] stop() called, state:", r.state);
-      // The recorder's `onstop` will fire after the final dataavailable,
-      // call onRecorded, then cleanup. Don't double-cleanup here.
       r.stop();
     } else {
       cleanup();
@@ -244,7 +219,6 @@ export function useVideoRecorder(): UseVideoRecorderResult {
   return { start, stop };
 }
 
-// ----- Subtitle rendering inside the canvas --------------------------------
 function drawSubtitleToCanvas(
   ctx: CanvasRenderingContext2D,
   text: string,

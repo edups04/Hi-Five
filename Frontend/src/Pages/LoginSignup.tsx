@@ -71,7 +71,6 @@ export default function AuthPage() {
     const [error, setError] = useState<string | null>(null);
     const [passwordTouched, setPasswordTouched] = useState(false);
 
-    // Signup 2FA state
     const [show2FA, setShow2FA] = useState(false);
     const [twoFAStep, setTwoFAStep] = useState<TwoFAStep>('qr');
     const [qrSecret, setQrSecret] = useState('');
@@ -81,13 +80,13 @@ export default function AuthPage() {
     const [verifyingSignup, setVerifyingSignup] = useState(false);
     const signupOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-    // Login 2FA state
     const [showLogin2FA, setShowLogin2FA] = useState(false);
     const [loginUserId, setLoginUserId] = useState('');
     const [loginOtp, setLoginOtp] = useState<string[]>(Array(6).fill(''));
     const [loginOtpError, setLoginOtpError] = useState<string | null>(null);
     const [verifyingLogin, setVerifyingLogin] = useState(false);
     const loginOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const [finishError, setFinishError] = useState<string | null>(null);
 
     const navigate = useNavigate();
 
@@ -98,9 +97,9 @@ export default function AuthPage() {
         setSignupOtp(Array(6).fill(''));
         setSignupOtpError(null); setTwoFAStep('qr');
         setQrSecret(''); setQrUrl('');
+        setFinishError(null); 
     }
 
-    // ── OTP helpers ────────────────────────────────────────────────────────────
     function makeOtpHandlers(
         otp: string[],
         setOtp: (v: string[]) => void,
@@ -130,10 +129,11 @@ export default function AuthPage() {
     const signupOtpHandlers = makeOtpHandlers(signupOtp, setSignupOtp, signupOtpRefs);
     const loginOtpHandlers = makeOtpHandlers(loginOtp, setLoginOtp, loginOtpRefs);
 
-    // ── Signup flow ────────────────────────────────────────────────────────────
     async function handleCreateAccount() {
         setError(null);
         if (!username.trim() || !email.trim() || !password.trim()) { setError("Please fill in all fields."); return; }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) { setError("Please enter a valid email address."); return; }
         if (!passwordValid(password)) { setError("Password does not meet all requirements."); return; }
         if (!phone.trim()) { setError("Please enter your phone number."); return; }
         if (!agreedPrivacy || !agreedTerms) { setError("Please agree to the Privacy Policy and Terms of Service."); return; }
@@ -143,6 +143,16 @@ export default function AuthPage() {
             if (res.data.success) {
                 setQrSecret(res.data.secret);
                 setQrUrl(res.data.otpauthUrl);
+                try {
+                    const check = await axios.post(`${API_URL}/check-duplicate`, { email, username });
+                    if (!check.data.available) {
+                        setError(check.data.message);
+                        return;
+                    }
+                } catch {
+                    setError("Network error. Please try again.");
+                    return;
+                }
                 setTwoFAStep('qr');
                 setSignupOtp(Array(6).fill(''));
                 setSignupOtpError(null);
@@ -176,6 +186,7 @@ export default function AuthPage() {
 
     async function handleFinish2FA() {
         const fullPhone = `+63${phone.trim()}`;
+        setFinishError(null);
         try {
             const result = await axios.post(`${API_URL}/signup`, {
                 username, email, password,
@@ -188,16 +199,14 @@ export default function AuthPage() {
                 setTab("login");
                 resetSignupFields();
             } else {
-                setShow2FA(false);
-                setError(result.data.message || "Signup failed.");
+                setFinishError(result.data.message || "Signup failed.");
             }
-        } catch {
-            setShow2FA(false);
-            setError("Network error. Please try again.");
+        } catch (err: any) {
+            const msg = err?.response?.data?.message || "Network error. Please try again.";
+            setFinishError(msg);
         }
     }
 
-    // ── Login flow ─────────────────────────────────────────────────────────────
     function handleLogin(e: React.FormEvent | React.MouseEvent) {
         e.preventDefault();
         setError(null);
@@ -292,8 +301,8 @@ export default function AuthPage() {
 
                 <div style={st.right} className="auth-right">
                     <div style={st.tabs} className="auth-tabs">
-                        <button style={{ ...st.tab, ...(tab === "login" ? st.tabActive : st.tabInactive) }} className="tab-btn" onClick={() => { setTab("login"); setError(null); setPasswordTouched(false); }}>Log In</button>
-                        <button style={{ ...st.tab, ...(tab === "signup" ? st.tabActive : st.tabInactive) }} className="tab-btn" onClick={() => { setTab("signup"); setError(null); setPasswordTouched(false); }}>Sign Up</button>
+                        <button style={{ ...st.tab, ...(tab === "login" ? st.tabActive : st.tabInactive) }} className="tab-btn" onClick={() => { setTab("login"); setError(null); setPasswordTouched(false); setEmail(""); setPassword(""); setUsername(""); setPhone(""); setAgreedPrivacy(false); setAgreedTerms(false); }}>Log In</button>
+                        <button style={{ ...st.tab, ...(tab === "signup" ? st.tabActive : st.tabInactive) }} className="tab-btn" onClick={() => { setTab("signup"); setError(null); setPasswordTouched(false); setEmail(""); setPassword(""); setUsername(""); setPhone(""); setAgreedPrivacy(false); setAgreedTerms(false); }}>Sign Up</button>
                     </div>
 
                     <div style={st.formWrap} className="auth-form-wrap">
@@ -472,6 +481,9 @@ export default function AuthPage() {
                                 <div style={st.successIcon}><CheckCircle2 size={40} color="#16a34a" strokeWidth={2} /></div>
                                 <h2 style={st.successTitle}>You're all set!</h2>
                                 <p style={st.successSub}>Two-factor authentication has been successfully enabled. Your account is now more secure.</p>
+                                {finishError && (
+                                    <p style={{ ...st.errorText, textAlign: "center", margin: "0" }}>{finishError}</p>
+                                )}
                                 <button style={{ ...st.primaryBtn, padding: "13px 32px", fontSize: 15 }} onClick={handleFinish2FA} className="auth-primary-btn">
                                     Continue to Login
                                 </button>

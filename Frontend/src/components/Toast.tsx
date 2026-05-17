@@ -1,14 +1,3 @@
-// src/components/Toast.tsx
-//
-// Small toast notification system. Wrap the app (or just the page) in
-// <ToastProvider>, then call useToast() inside any component to push messages.
-//
-//   const toast = useToast();
-//   toast.success('Saved!');
-//   toast.error('Upload failed: network error');
-//
-// Toasts auto-dismiss after 3.5s (longer for errors) and stack from the bottom.
-
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { CheckCircle2, AlertCircle, X } from 'lucide-react';
@@ -103,7 +92,6 @@ export function useToast(): ToastApi {
   return ctx;
 }
 
-// ---- Styles -----------------------------------------------------------------
 
 const styles: Record<string, CSSProperties> = {
   container: {
@@ -114,7 +102,7 @@ const styles: Record<string, CSSProperties> = {
     flexDirection: 'column',
     gap: 10,
     zIndex: 9999,
-    pointerEvents: 'none',           // children re-enable
+    pointerEvents: 'none',           
     fontFamily: "'Manrope', sans-serif",
     maxWidth: 'calc(100vw - 48px)',
   },
@@ -153,7 +141,6 @@ const styles: Record<string, CSSProperties> = {
   },
 };
 
-// Per-kind colors — fits the Hi-Five orange/cream palette.
 const kindStyles: Record<ToastKind, CSSProperties> = {
   success: {
     background: '#0F7B3F',

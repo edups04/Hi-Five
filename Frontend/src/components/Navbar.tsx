@@ -8,13 +8,11 @@ export default function Navbar() {
   return (
     <div style={S.wrapper}>
       <nav style={S.nav}>
-        {/* Brand */}
         <div style={S.brand}>
           <img src={logo} alt="Hi-Five" style={S.logo} />
           <span style={S.brandTitle}>Hi - Five</span>
         </div>
 
-        {/* Buttons */}
         <div style={S.actions}>
           <button style={S.logInBtn} onClick={() => navigate("/login")}>LOG IN</button>
           <button style={S.signUpBtn} onClick={() => navigate("/signup")}>SIGN UP</button>

@@ -49,6 +49,7 @@ import { useEffect, useMemo, useState } from 'react';
     const [loadError, setLoadError] = useState<string | null>(null);
     const [query, setQuery] = useState('');
     const [playing, setPlaying] = useState<RecordingMeta | null>(null);
+    const [deleteTarget, setDeleteTarget] = useState<RecordingMeta | null>(null);
 
 
     async function load() {
@@ -93,14 +94,19 @@ import { useEffect, useMemo, useState } from 'react';
     }
 
     async function handleDelete(recording: RecordingMeta) {
-        const ok = window.confirm(`Delete "${recording.name}"? This can't be undone.`);
-        if (!ok) return;
+        setDeleteTarget(recording);
+    }
+
+    async function confirmDelete() {
+        if (!deleteTarget) return;
         try {
-            await deleteRecording(recording.id);
-            setRecordings(prev => prev.filter(r => r.id !== recording.id));
+            await deleteRecording(deleteTarget.id);
+            setRecordings(prev => prev.filter(r => r.id !== deleteTarget.id));
             toast.success('Deleted');
         } catch (err) {
             toast.error(`Delete failed: ${err instanceof Error ? err.message : 'unknown error'}`);
+        } finally {
+            setDeleteTarget(null);
         }
     }
 
@@ -382,12 +388,74 @@ import { useEffect, useMemo, useState } from 'react';
         </main>
 
         <RecordingPlaybackModal
-            recording={playing}
-            onClose={() => setPlaying(null)}
-        />
+                    recording={playing}
+                    onClose={() => setPlaying(null)}
+                />
+
+        {deleteTarget && (
+            <div style={{
+                position: 'fixed', inset: 0, zIndex: 50,
+                background: 'rgba(0,0,0,0.45)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: 16, fontFamily: "'Manrope', sans-serif",
+            }} onClick={() => setDeleteTarget(null)}>
+                <div style={{
+                    background: '#fff', borderRadius: 20, padding: 28,
+                    width: '100%', maxWidth: 400,
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+                }} onClick={e => e.stopPropagation()}>
+                    <div style={{
+                        width: 48, height: 48, borderRadius: '50%',
+                        background: '#FEE2E2', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center',
+                        marginBottom: 16,
+                    }}>
+                        <Trash2 size={22} color="#DC2626" strokeWidth={2} />
+                    </div>
+                    <h2 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#3B1A00', letterSpacing: '-0.01em' }}>
+                        Delete Recording
+                    </h2>
+                    <p style={{ margin: '0 0 6px', fontSize: 14, color: '#9B7355', fontWeight: 600, lineHeight: 1.5 }}>
+                        Are you sure you want to delete
+                    </p>
+                    <p style={{ margin: '0 0 24px', fontSize: 14, fontWeight: 800, color: '#3B1A00' }}>
+                        "{deleteTarget.name}"?
+                    </p>
+                    <p style={{ margin: '0 0 24px', fontSize: 13, color: '#9B7355', lineHeight: 1.5 }}>
+                        This action cannot be undone and the recording will be permanently removed.
+                    </p>
+                    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                        <button
+                            type="button"
+                            onClick={() => setDeleteTarget(null)}
+                            style={{
+                                padding: '10px 20px', borderRadius: 50,
+                                border: '1px solid #E7C9B6', background: '#fff0e7',
+                                color: '#9B7355', fontWeight: 700, fontSize: 13,
+                                cursor: 'pointer', fontFamily: "'Manrope', sans-serif",
+                            }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={confirmDelete}
+                            style={{
+                                padding: '10px 20px', borderRadius: 50,
+                                border: 'none', background: '#DC2626',
+                                color: '#fff', fontWeight: 700, fontSize: 13,
+                                cursor: 'pointer', fontFamily: "'Manrope', sans-serif",
+                            }}
+                        >
+                            Yes, Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
         </div>
     );
-    }
+}
 
     const libraryStateCss = `
         .home-library-state {

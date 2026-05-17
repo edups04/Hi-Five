@@ -6,25 +6,12 @@ import {
 } from "../styles/pages/RecordingPreview.styles";
 
 export interface RecordingPreviewModalProps {
-  /** When non-null, the modal is open and showing this blob. */
   blob: Blob | null;
-  /** Called with the user-typed name when they click Keep. */
   onKeep: (name: string) => void;
-  /** Called when they click Discard. */
   onDiscard: () => void;
-  /** When true, shows a spinner on the Keep button and disables interaction. */
   isSaving?: boolean;
 }
 
-/**
- * Preview a freshly-recorded clip; user names it and saves, or discards.
- *
- * UX rules:
- *  - Name input starts empty; Keep is disabled until they type something.
- *  - Esc deliberately does nothing (losing a recording to a misclick is bad).
- *  - Enter while name is non-empty triggers Keep.
- *  - While isSaving=true, both buttons disable so we don't double-submit.
- */
 export function RecordingPreviewModal(props: RecordingPreviewModalProps) {
   const { blob, onKeep, onDiscard, isSaving = false } = props;
   const [name, setName] = useState("");

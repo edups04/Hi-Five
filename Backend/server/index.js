@@ -34,6 +34,21 @@ mongoose.connect(process.env.MONGO_URI)
 })
 .catch(err => console.log(err));
 
+function createTransporter() {
+    return nodemailer.createTransport({
+        host: 'smtp-relay.brevo.com',
+        port: 465,
+        secure: true,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
+    });
+}
+
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const ip = req.ip;
@@ -63,7 +78,6 @@ app.post('/login', async (req, res) => {
         if (user) {
             bcrypt.compare(password, user.password, async (err, response) => {
                 if (response) {
-                    // Check 2FA before issuing JWT
                     if (user.twoFactorEnabled && user.twoFactorSecret) {
                         await writeLog({
                             actor: user.email,
@@ -119,14 +133,14 @@ app.post('/login', async (req, res) => {
 });
 
 app.post('/signup', async (req, res) => {
-    const { username, email, password, phone, twoFactorEnabled, twoFactorSecret } = req.body;
+    const { username, email, password, twoFactorEnabled, twoFactorSecret } = req.body;
     const ip = req.ip;
 
     const passwordRules = [
-        { test: (p) => p && p.length >= 8, msg: "Password must be at least 8 characters." },
-        { test: (p) => /[A-Z]/.test(p), msg: "Password must contain at least one uppercase letter." },
-        { test: (p) => /[a-z]/.test(p), msg: "Password must contain at least one lowercase letter." },
-        { test: (p) => /[0-9]/.test(p), msg: "Password must contain at least one number." },
+        { test: (p) => p && p.length >= 8,                               msg: "Password must be at least 8 characters." },
+        { test: (p) => /[A-Z]/.test(p),                                  msg: "Password must contain at least one uppercase letter." },
+        { test: (p) => /[a-z]/.test(p),                                  msg: "Password must contain at least one lowercase letter." },
+        { test: (p) => /[0-9]/.test(p),                                  msg: "Password must contain at least one number." },
         { test: (p) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p), msg: "Password must contain at least one special character." },
     ];
 
@@ -134,14 +148,10 @@ app.post('/signup', async (req, res) => {
     if (failed) return res.status(400).json({ success: false, message: failed.msg });
 
     const existingEmail = await UsersModel.findOne({ email });
-    if (existingEmail) {
-        return res.status(400).json({ success: false, message: "An account with this email already exists." });
-    }
+    if (existingEmail) return res.status(400).json({ success: false, message: "An account with this email already exists." });
 
     const existingUsername = await UsersModel.findOne({ username });
-    if (existingUsername) {
-        return res.status(400).json({ success: false, message: "This username is already taken. Please choose another." });
-    }
+    if (existingUsername) return res.status(400).json({ success: false, message: "This username is already taken. Please choose another." });
 
     bcrypt.hash(password, 10)
     .then(hash => {
@@ -149,7 +159,6 @@ app.post('/signup', async (req, res) => {
             username,
             email,
             password: hash,
-            phone: phone || null,
             twoFactorEnabled: twoFactorEnabled || false,
             twoFactorSecret: twoFactorSecret || null,
         })
@@ -165,11 +174,14 @@ app.post('/signup', async (req, res) => {
             });
             res.status(201).json({ success: true, message: "Account created", user });
         })
-        .catch(err => { const msg = err.code === 11000 ? err.keyPattern?.email
-        ? "An account with this email already exists."
-        : "This username is already taken. Please choose another."
-        : err.message; res.status(400).json({ success: false, message: msg });
-});
+        .catch(err => {
+            const msg = err.code === 11000
+                ? err.keyPattern?.email
+                    ? "An account with this email already exists."
+                    : "This username is already taken. Please choose another."
+                : err.message;
+            res.status(400).json({ success: false, message: msg });
+        });
     })
     .catch(err => res.status(500).json({ success: false, message: err.message }));
 });
@@ -184,21 +196,23 @@ app.post('/forgot-password', (req, res) => {
 
         const token = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET_KEY, { expiresIn: "1h" });
 
-        var transporter = nodemailer.createTransport({
-            host: 'smtp-relay.brevo.com',
-            port: 587,
-            secure: false,
-            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 10000,
-        });
+        const transporter = createTransporter();
 
-        var mailOptions = {
-            from: process.env.EMAIL_USER,
+        const mailOptions = {
+            from: `Hi-Five <${process.env.EMAIL_USER}>`,
             to: user.email,
-            subject: 'Password Reset Request',
-            text: `You requested a password reset. Click the link to reset your password: ${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${user._id}/${token}`,
+            subject: 'Password Reset Request — Hi-Five',
+            html: `
+                <div style="font-family: 'Manrope', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #FAF0E8; border-radius: 16px;">
+                    <h2 style="color: #C2410C; font-size: 22px; margin: 0 0 8px;">Password Reset</h2>
+                    <p style="color: #9B7355; font-size: 14px; margin: 0 0 24px;">You requested a password reset for your Hi-Five account.</p>
+                    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${user._id}/${token}"
+                       style="display: inline-block; background: #92400E; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 14px;">
+                        Reset Password
+                    </a>
+                    <p style="color: #C8A882; font-size: 12px; margin: 24px 0 0;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+                </div>
+            `,
         };
 
         transporter.sendMail(mailOptions, async (error, info) => {
@@ -300,7 +314,7 @@ app.post('/update-profile', async (req, res) => {
             const updateFields = {};
             if (username && username.trim()) updateFields.username = username.trim();
             if (avatar) updateFields.avatar = avatar;
-            if (phone) updateFields.phone = phone;
+            if (phone !== undefined) updateFields.phone = phone;
 
             const user = await UsersModel.findByIdAndUpdate(decoded.id, updateFields, { new: true }).select('-password');
             if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -364,7 +378,6 @@ app.delete('/delete-account', async (req, res) => {
     });
 });
 
-
 app.post('/setup-2fa', async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ success: false, message: 'Email required' });
@@ -375,24 +388,14 @@ app.post('/setup-2fa', async (req, res) => {
         length: 20,
     });
 
-    res.json({
-        success: true,
-        secret: secret.base32,
-        otpauthUrl: secret.otpauth_url,
-    });
+    res.json({ success: true, secret: secret.base32, otpauthUrl: secret.otpauth_url });
 });
 
 app.post('/verify-2fa-setup', async (req, res) => {
     const { token, secret } = req.body;
     if (!token || !secret) return res.status(400).json({ success: false, message: 'Token and secret required' });
 
-    const verified = speakeasy.totp.verify({
-        secret,
-        encoding: 'base32',
-        token,
-        window: 1,
-    });
-
+    const verified = speakeasy.totp.verify({ secret, encoding: 'base32', token, window: 1 });
     if (!verified) return res.status(400).json({ success: false, message: 'Invalid code. Please try again.' });
     res.json({ success: true });
 });
@@ -427,11 +430,7 @@ app.post('/verify-2fa-login', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid code. Please try again.' });
         }
 
-        const jwtToken = jwt.sign(
-            { id: user._id, email: user.email },
-            process.env.SECRET_KEY,
-            { expiresIn: '7d' }
-        );
+        const jwtToken = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET_KEY, { expiresIn: '7d' });
 
         await writeLog({
             actor: user.email,
@@ -449,17 +448,43 @@ app.post('/verify-2fa-login', async (req, res) => {
     }
 });
 
+app.post('/verify-2fa-trusted', async (req, res) => {
+    const { userId } = req.body;
+    const ip = req.ip;
+
+    if (!userId) return res.status(400).json({ success: false, message: 'Missing userId' });
+
+    try {
+        const user = await UsersModel.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+        const jwtToken = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET_KEY, { expiresIn: '7d' });
+
+        await writeLog({
+            actor: user.email,
+            actorId: user._id,
+            type: 'User Action',
+            severity: 'INFO',
+            action: 'user.login',
+            description: `User "${user.username || user.email}" logged in via trusted device`,
+            ip,
+        });
+
+        res.json({ success: true, token: jwtToken });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 app.post('/check-duplicate', async (req, res) => {
     const { email, username } = req.body;
     try {
         const existingEmail = await UsersModel.findOne({ email });
-        if (existingEmail) {
-            return res.json({ available: false, message: "An account with this email already exists." });
-        }
+        if (existingEmail) return res.json({ available: false, message: "An account with this email already exists." });
+
         const existingUsername = await UsersModel.findOne({ username });
-        if (existingUsername) {
-            return res.json({ available: false, message: "This username is already taken. Please choose another." });
-        }
+        if (existingUsername) return res.json({ available: false, message: "This username is already taken. Please choose another." });
+
         res.json({ available: true });
     } catch (error) {
         res.status(500).json({ available: false, message: "Server error. Please try again." });

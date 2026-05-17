@@ -15,39 +15,193 @@ const TRUSTED_DEVICE_EXPIRY_DAYS = 7;
 type LegalModal = 'none' | 'privacy' | 'terms';
 type TwoFAStep = 'qr' | 'otp' | 'success';
 
-const PRIVACY_POLICY = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+const PRIVACY_POLICY = `Hi-Five — ASL Made Visible 
 
-1. Information We Collect
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Effective: May 2026 | Last Updated: May 16, 2026
 
-2. How We Use Your Information
-Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
+01 — OVERVIEW 
 
-3. Data Security
-At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.
+What is Hi-Five?
 
-4. Your Rights
-Similique sunt in culpa qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio.
+Hi-Five is a web-based video recording system that uses machine learning to automatically detect American Sign Language (ASL) hand signs and display them as real-time on-screen captions. This Privacy Policy explains what personal data we collect when you use Hi-Five and how we handle it.
 
-5. Contact Us
-Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus saepe eveniet ut et voluptates repudiandae sint et molestiae non recusandae.`;
+Our commitment: We only collect what is strictly necessary to run the platform. We do not sell your data, and we do not use your content for any purpose beyond providing the service to you.
 
-const TERMS_OF_SERVICE = `Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla facilisi. Maecenas vel nisl nec urna tincidunt tincidunt vel at nunc.
+02 — DATA WE COLLECT
 
-1. Acceptance of Terms
-Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante.
+Information We Collect
 
-2. Use of Service
-Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra.
+When you create an account or use Hi-Five, we collect only the following:
 
-3. User Accounts
-Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui.
+Account Credentials
 
-4. Prohibited Activities
-Tortor pretium viverra suspendisse potenti nullam ac tortor vitae purus faucibus ornare suspendisse sed nisi lacus.
+Your username and email address, used to identify your account. Your password is never stored as plain text, it is encrypted using industry-standard hashing before it is saved to our database.
 
-5. Governing Law
-These terms shall be governed by the laws of the Republic of the Philippines. Any disputes arising from these terms shall be subject to the jurisdiction of Philippine courts.`;
+System Logs
+
+We automatically collect basic usage logs (e.g., login events, errors) solely for system monitoring and platform stability. These logs are not used for profiling, advertising, or any other purpose.
+
+Video Recordings
+
+Videos you record using Hi-Five are saved to your personal library. We do not collect or transmit your raw video footage beyond your own account storage. See the Videos section below for more detail.
+
+03 — HOW WE USE IT
+
+How We Use Your Information
+
+- To create and manage your account on Hi-Five.
+
+- To authenticate your identity when you log in.
+
+- To allow you to record, save, and export captioned videos.
+
+- To monitor system health, detect errors, and keep the platform running smoothly.
+
+- To respond to support requests you submit to us.
+
+We do NOT use your data for advertising, sell it to third parties, or share it with any external companies.
+
+04 — YOUR VIDEOS
+
+How We Handle Your Videos
+
+Your recorded videos are stored privately in your account library. Here is what you need to know:
+
+- Only you can view and access your videos through your account.
+
+- Administrators can see a list of video entries (title, date, duration) for system monitoring purposes — but cannot view or play the actual video content.
+
+- You can delete any video at any time, and it will be permanently removed from our servers.
+
+- We do not use your video content to train machine learning models or for any other purpose outside of delivering the service to you.
+
+05 — SECURITY
+
+How We Protect Your Data
+
+We take security seriously and apply the following protections:
+
+- Encrypted passwords: Your password is hashed using a cryptographic algorithm before storage. No one, including our team can read your password.
+
+- HTTPS: All data transmitted between your browser and our servers is encrypted using TLS (HTTPS).
+
+- Access controls: Only authorized personnel can access system infrastructure, and even then, access is limited to what is necessary for their role.
+
+- No third-party data sharing: We do not share your personal data with any third party unless required by law.
+
+06 — YOUR RIGHTS
+
+Your Rights Under Philippine Law
+
+Under the Data Privacy Act of 2012 (Republic Act No. 10173), you have the following rights regarding your personal data:
+
+- Right to Access: You can request a copy of the personal data we hold about you.
+
+- Right to Correction: You can update your username and account details at any time through Settings.
+
+- Right to Deletion: You can delete your account and all associated data. Deletion is permanent and irreversible.
+
+- Right to Object: You may object to any processing of your data that you believe is not necessary or lawful.
+
+- Right to Data Portability: You may request your data in a portable, machine-readable format.
+
+To exercise any of these rights, please contact us using the details below.
+
+07 — DATA PROTECTION
+
+Data Protection Officer
+
+In compliance with the National Privacy Commission (NPC) requirements under the Data Privacy Act of 2012, Hi-Five designates a Data Protection Officer (DPO) responsible for ensuring your privacy rights are upheld.
+
+You may contact our Data Protection Officer directly for any privacy-related concerns, requests, or complaints. See the contact section below.
+
+08 — CONTACT US
+
+Get in Touch
+
+If you have any questions about this Privacy Policy or wish to exercise your data rights, please reach out to us:
+
+Hi-Five Privacy Team
+
+Data Protection Officer / Research Team
+
+Gordon College — Bachelor of Science in Computer Science
+
+Email: 2026hifive@gmail.com
+
+Website: https://hi-five-ten.vercel.app
+
+We will respond to all privacy requests within 15 business days in accordance with the Data Privacy Act of 2012.
+
+© 2026 Gehirn Team · Gordon College · BSCS Research Project
+
+Hi-Five — ASL Made Visible · All rights reserved.
+
+`;
+
+const TERMS_OF_SERVICE = `Hi-Five — ASL Made Visible.
+
+Effective: May 2026 | Last Updated: May 16, 2026
+
+By using Hi-Five, you agree to these terms.
+
+1. WHO CAN USE IT
+
+Only students, teachers, and authorized users may register.
+
+2. YOUR ACCOUNT
+
+- Use your real information when signing up.
+
+- Keep your password private.
+
+- One account per person only.
+
+3. YOUR VIDEOS
+
+- Your recordings are yours.
+
+- We store them only to run the service.
+
+- Do not record anything illegal or harmful.
+
+4. What you CANNOT do
+
+- Do not hack or misuse the platform.
+
+- Do not pretend to be someone else.
+
+- Do not share your account with others.
+
+5. NO GUARANTEES
+
+Hi-Five is a student research project.
+
+ASL recognition may not always be 100% accurate.
+
+6. DELETING YOUR ACCOUNT
+
+You can delete your account anytime in Settings.
+
+This removes all your data permanently.
+
+7. OUR RIGHTS
+
+We can suspend accounts that break these rules.
+
+We may update these terms anytime.
+
+8. PHILIPPINE LAW
+
+These terms follow Philippine law, including the Data Privacy Act of 2012 (RA 10173).
+
+Questions? Contact us:
+
+Email:   2026@hifve@gmail.com
+
+Website: https://hi-five-ten.vercel.app
+
+Gehirn Team · Gordon College · BSCS 2026`;
 
 const PASSWORD_RULES = [
     { key: 'length',  label: 'At least 8 characters',         test: (p: string) => p.length >= 8 },

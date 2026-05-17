@@ -8,11 +8,13 @@ const bcrypt = require('bcrypt');
 const authRoute = require('./Routes/authRoute');
 require('./config/passport');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
 const recordingsRouter = require('./Routes/recordings');
 const adminRouter = require('./Routes/admin');
 const { writeLog } = require('./middleware/auditLogger');
 const speakeasy = require('speakeasy');
+
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -33,21 +35,6 @@ mongoose.connect(process.env.MONGO_URI)
     });
 })
 .catch(err => console.log(err));
-
-function createTransporter() {
-    return nodemailer.createTransport({
-        host: 'smtp-relay.brevo.com',
-        port: 465,
-        secure: true,
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-        },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
-    });
-}
 
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
@@ -196,30 +183,23 @@ app.post('/forgot-password', (req, res) => {
 
         const token = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET_KEY, { expiresIn: "1h" });
 
-        const transporter = createTransporter();
-
-        const mailOptions = {
-            from: `Hi-Five <${process.env.EMAIL_USER}>`,
-            to: user.email,
-            subject: 'Password Reset Request — Hi-Five',
-            html: `
-                <div style="font-family: 'Manrope', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #FAF0E8; border-radius: 16px;">
-                    <h2 style="color: #C2410C; font-size: 22px; margin: 0 0 8px;">Password Reset</h2>
-                    <p style="color: #9B7355; font-size: 14px; margin: 0 0 24px;">You requested a password reset for your Hi-Five account.</p>
-                    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${user._id}/${token}"
-                       style="display: inline-block; background: #92400E; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 14px;">
-                        Reset Password
-                    </a>
-                    <p style="color: #C8A882; font-size: 12px; margin: 24px 0 0;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
-                </div>
-            `,
-        };
-
-        transporter.sendMail(mailOptions, async (error, info) => {
-            if (error) {
-                console.error('Email send failed:', error);
-                return res.status(500).send({ Status: "Failed to send email. Please try again later." });
-            }
+        try {
+            await resend.emails.send({
+                from: `Hi-Five <onboarding@resend.dev>`,
+                to: user.email,
+                subject: 'Password Reset Request — Hi-Five',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #FAF0E8; border-radius: 16px;">
+                        <h2 style="color: #C2410C; font-size: 22px; margin: 0 0 8px;">Password Reset</h2>
+                        <p style="color: #9B7355; font-size: 14px; margin: 0 0 24px;">You requested a password reset for your Hi-Five account.</p>
+                        <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${user._id}/${token}"
+                        style="display: inline-block; background: #92400E; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 14px;">
+                            Reset Password
+                        </a>
+                        <p style="color: #C8A882; font-size: 12px; margin: 24px 0 0;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+                    </div>
+                `,
+            });
             await writeLog({
                 actor: email,
                 actorId: user._id,
@@ -230,7 +210,10 @@ app.post('/forgot-password', (req, res) => {
                 ip,
             });
             return res.send({ Status: "Password reset email sent" });
-        });
+        } catch (error) {
+            console.error('Email send failed:', error);
+            return res.status(500).send({ Status: "Failed to send email. Please try again later." });
+        }
     })
     .catch(err => {
         console.error('forgot-password error:', err);

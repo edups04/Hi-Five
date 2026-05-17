@@ -173,7 +173,7 @@ app.post('/signup', async (req, res) => {
     .catch(err => res.status(500).json({ success: false, message: err.message }));
 });
 
-app.post('/forgot-password', (req, res) => {
+app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     const ip = req.ip;
 

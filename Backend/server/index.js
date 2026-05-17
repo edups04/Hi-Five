@@ -63,8 +63,20 @@ app.post('/login', async (req, res) => {
     UsersModel.findOne({ email })
     .then(user => {
         if (user) {
+            if (user.lockedUntil && user.lockedUntil > new Date()) {
+                const minutesLeft = Math.ceil((user.lockedUntil - Date.now()) / 60000);
+                return res.json({ success: false, message: `Your account is temporarily locked. Please try again in ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''}.` });}
             bcrypt.compare(password, user.password, async (err, response) => {
                 if (response) {
+                    if (user.deactivated === true) {
+                        return res.json({ success: false, message: "Your account is deactivated. Please sign up to create a new account." });
+                    }
+                    if (user.lockedUntil && user.lockedUntil > new Date()) {
+                        const minutesLeft = Math.ceil((user.lockedUntil - Date.now()) / 60000);
+                        return res.json({ success: false, message: `Your account is temporarily locked. Please try again in ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''}.` });
+                    }
+                    await UsersModel.findByIdAndUpdate(user._id, { loginAttempts: 0, lockedUntil: null });
+
                     if (user.twoFactorEnabled && user.twoFactorSecret) {
                         await writeLog({
                             actor: user.email,
@@ -102,7 +114,36 @@ app.post('/login', async (req, res) => {
                         description: `Failed login attempt for email: "${email}"`,
                         ip,
                     });
-                    res.json({ success: false, message: "The password is incorrect" });
+                    const MAX_ATTEMPTS = 5;
+                    const LOCK_MINUTES = 15;
+                    const attempts = (user.loginAttempts || 0) + 1;
+                    const updateData = { loginAttempts: attempts };
+
+                    if (attempts >= MAX_ATTEMPTS) {
+                        updateData.lockedUntil = new Date(Date.now() + LOCK_MINUTES * 60 * 1000);
+                        updateData.loginAttempts = 0;
+                        await UsersModel.findByIdAndUpdate(user._id, updateData);
+                        await writeLog({
+                            actor: email,
+                            type: 'Security',
+                            severity: 'WARNING',
+                            action: 'user.account_locked',
+                            description: `Account "${email}" locked after ${MAX_ATTEMPTS} failed login attempts`,
+                            ip,
+                        });
+                        return res.json({ success: false, message: `Too many failed attempts. Your account has been locked for ${LOCK_MINUTES} minutes.` });
+                    }
+
+                    await UsersModel.findByIdAndUpdate(user._id, updateData);
+                    await writeLog({
+                        actor: email,
+                        type: 'Security',
+                        severity: 'WARNING',
+                        action: 'user.login.failed',
+                        description: `Failed login attempt ${attempts}/${MAX_ATTEMPTS} for email: "${email}"`,
+                        ip,
+                    });
+                    res.json({ success: false, message: `The password is incorrect. ${MAX_ATTEMPTS - attempts} attempt${MAX_ATTEMPTS - attempts !== 1 ? 's' : ''} remaining.` });
                 }
             });
         } else {
@@ -124,10 +165,10 @@ app.post('/signup', async (req, res) => {
     const ip = req.ip;
 
     const passwordRules = [
-        { test: (p) => p && p.length >= 8,                               msg: "Password must be at least 8 characters." },
-        { test: (p) => /[A-Z]/.test(p),                                  msg: "Password must contain at least one uppercase letter." },
-        { test: (p) => /[a-z]/.test(p),                                  msg: "Password must contain at least one lowercase letter." },
-        { test: (p) => /[0-9]/.test(p),                                  msg: "Password must contain at least one number." },
+        { test: (p) => p && p.length >= 8, msg: "Password must be at least 8 characters." },
+        { test: (p) => /[A-Z]/.test(p), msg: "Password must contain at least one uppercase letter." },
+        { test: (p) => /[a-z]/.test(p), msg: "Password must contain at least one lowercase letter." },
+        { test: (p) => /[0-9]/.test(p), msg: "Password must contain at least one number." },
         { test: (p) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(p), msg: "Password must contain at least one special character." },
     ];
 
@@ -135,7 +176,12 @@ app.post('/signup', async (req, res) => {
     if (failed) return res.status(400).json({ success: false, message: failed.msg });
 
     const existingEmail = await UsersModel.findOne({ email });
-    if (existingEmail) return res.status(400).json({ success: false, message: "An account with this email already exists." });
+    if (existingEmail) {
+        if (existingEmail.deactivated) {
+            return res.status(400).json({ success: false, message: "This email belongs to a deactivated account. Please use a different email or contact support." });
+        }
+        return res.status(400).json({ success: false, message: "An account with this email already exists." });
+    }
 
     const existingUsername = await UsersModel.findOne({ username });
     if (existingUsername) return res.status(400).json({ success: false, message: "This username is already taken. Please choose another." });
@@ -315,42 +361,34 @@ app.post('/update-profile', async (req, res) => {
     });
 });
 
-app.delete('/delete-account', async (req, res) => {
+app.post('/request-deactivation', async (req, res) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.status(401).json({ success: false, message: 'No token provided' });
-
+ 
     jwt.verify(token, process.env.SECRET_KEY, async (err, decoded) => {
         if (err) return res.status(403).json({ success: false, message: 'Invalid token' });
-
+ 
         try {
             const user = await UsersModel.findById(decoded.id);
             if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-
-            const Recording = require('./models/recording');
-            const recordings = await Recording.find({ userId: decoded.id });
-
-            const path = require('path');
-            const fsp = require('fs').promises;
-            for (const rec of recordings) {
-                const filePath = path.join(process.env.UPLOAD_ROOT || path.join(__dirname, 'uploads'), String(decoded.id), `${String(rec._id)}.mp4`);
-                await fsp.unlink(filePath).catch(() => {});
-            }
-
-            await Recording.deleteMany({ userId: decoded.id });
-            await UsersModel.findByIdAndDelete(decoded.id);
-
+ 
+            await UsersModel.findByIdAndUpdate(decoded.id, {
+                deactivationRequested: true,
+                deactivationRequestedAt: new Date(),
+            });
+ 
             await writeLog({
                 actor: user.email,
                 actorId: user._id,
                 type: 'User Action',
                 severity: 'WARNING',
-                action: 'user.account_deleted',
-                description: `User "${user.username || user.email}" deleted their account`,
+                action: 'user.deactivation_requested',
+                description: `User "${user.username || user.email}" requested account deactivation`,
                 ip: req.ip,
             });
-
-            res.json({ success: true });
+ 
+            res.json({ success: true, message: 'Deactivation request submitted. An admin will review your request.' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
         }

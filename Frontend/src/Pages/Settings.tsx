@@ -56,6 +56,7 @@ function SettingsPage() {
 	const [deleting, setDeleting] = useState(false);
 	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const [newPasswordTouched, setNewPasswordTouched] = useState(false);
+	const [deactivationSuccess, setDeactivationSuccess] = useState(false);
 
 	const currentUser = useMemo<UserProfile | null>(() => {
 		const userRaw = localStorage.getItem('user');
@@ -200,24 +201,26 @@ function SettingsPage() {
 		}
 	}
 
-	async function deleteAccount() {
+	async function requestDeactivation() {
 		const token = localStorage.getItem('accessToken');
 		if (!token) return;
 		setDeleting(true);
 		setDeleteError(null);
 		try {
-			const res = await fetch(`${API_URL}/delete-account`, {
-				method: 'DELETE',
+			const res = await fetch(`${API_URL}/request-deactivation`, {
+				method: 'POST',
 				headers: { 'Authorization': `Bearer ${token}` },
 			});
 			const data = await res.json();
 			if (data.success) {
-				if (currentUser?._id) clearTrustedDevice(currentUser._id);
-				localStorage.removeItem('accessToken');
-				localStorage.removeItem('user');
-				navigate('/auth');
+				setDeactivationSuccess(true);
+				setDeleting(false);
+				setTimeout(() => {
+					setDeactivationSuccess(false);
+					setShowDeleteModal(false);
+				}, 3000);
 			} else {
-				setDeleteError(data.message || 'Failed to delete account.');
+				setDeleteError(data.message || 'Failed to submit request.');
 				setDeleting(false);
 			}
 		} catch {
@@ -527,40 +530,56 @@ function SettingsPage() {
 
 				<section style={s.dangerCard} className="settings-danger-card">
 					<div>
-						<h3 style={s.dangerTitle} className="settings-danger-title">Deactivate Account</h3>
-						<p style={s.dangerText} className="settings-danger-text">This will permanently remove your recorded library and profile.</p>
+						<h3 style={s.dangerTitle}>Deactivate Account</h3>
+						<p style={s.dangerText}>Submit a request to deactivate your account. An admin will review and process it.</p>
 					</div>
 					<button type="button" style={s.actionBtnDanger} className="settings-danger-btn" onClick={() => setShowDeleteModal(true)}>
-						Delete Account
+						Deactivate
 					</button>
 				</section>
 			</main>
 
-			{showDeleteModal && (
-				<div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
-					onClick={() => { if (!deleting) setShowDeleteModal(false); }}
-				>
-					<div style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 420, fontFamily: "'Manrope', sans-serif", boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}
-						onClick={e => e.stopPropagation()}
+				{showDeleteModal && (
+					<div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+						onClick={() => { if (!deleting && !deactivationSuccess) setShowDeleteModal(false); }}
 					>
-						<h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 800, color: '#D9480F', letterSpacing: '-0.01em' }}>Delete Account</h2>
-						<p style={{ margin: '0 0 20px', fontSize: 14, color: '#9B7355', fontWeight: 600, lineHeight: 1.5 }}>
-							This will permanently delete your account and all your recordings. This action cannot be undone.
-						</p>
-						{deleteError && <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: '#dc2626' }}>{deleteError}</p>}
-						<div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-							<button type="button" onClick={() => setShowDeleteModal(false)} disabled={deleting}
-								style={{ padding: '10px 20px', borderRadius: 50, border: '1px solid #E7C9B6', background: '#fff0e7', color: '#9B7355', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'Manrope', sans-serif" }}>
-								Cancel
-							</button>
-							<button type="button" onClick={deleteAccount} disabled={deleting}
-								style={{ padding: '10px 20px', borderRadius: 50, border: 'none', background: '#DC2626', color: '#fff', fontWeight: 700, fontSize: 13, cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: "'Manrope', sans-serif", opacity: deleting ? 0.7 : 1 }}>
-								{deleting ? 'Deleting…' : 'Yes, Delete My Account'}
-							</button>
+						<div style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 420, fontFamily: "'Manrope', sans-serif", boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}
+							onClick={e => e.stopPropagation()}
+						>
+							{deactivationSuccess ? (
+								<div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12, padding: '8px 0' }}>
+									<div style={{ width: 52, height: 52, borderRadius: '50%', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+										<svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+											<path d="M5 13L9 17L19 7" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+										</svg>
+									</div>
+									<h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#3B1A00', letterSpacing: '-0.01em' }}>Request Submitted</h2>
+									<p style={{ margin: 0, fontSize: 14, color: '#9B7355', fontWeight: 600, lineHeight: 1.5 }}>
+										Your deactivation request has been submitted. An admin will review and process it shortly.
+									</p>
+								</div>
+							) : (
+								<>
+									<h2 style={{ margin: '0 0 8px', fontSize: 20, fontWeight: 800, color: '#D9480F', letterSpacing: '-0.01em' }}>Request Account Deactivation</h2>
+									<p style={{ margin: '0 0 20px', fontSize: 14, color: '#9B7355', fontWeight: 600, lineHeight: 1.5 }}>
+										Your deactivation request will be sent to an admin for review. Your account will remain active until the admin processes it.
+									</p>
+									{deleteError && <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: '#dc2626' }}>{deleteError}</p>}
+									<div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+										<button type="button" onClick={() => setShowDeleteModal(false)} disabled={deleting}
+											style={{ padding: '10px 20px', borderRadius: 50, border: '1px solid #E7C9B6', background: '#fff0e7', color: '#9B7355', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'Manrope', sans-serif" }}>
+											Cancel
+										</button>
+										<button type="button" onClick={requestDeactivation} disabled={deleting}
+											style={{ padding: '10px 20px', borderRadius: 50, border: 'none', background: '#DC2626', color: '#fff', fontWeight: 700, fontSize: 13, cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: "'Manrope', sans-serif", opacity: deleting ? 0.7 : 1 }}>
+											{deleting ? 'Submitting…' : 'Yes, Request Deactivation'}
+										</button>
+									</div>
+								</>
+							)}
 						</div>
 					</div>
-				</div>
-			)}
+				)}
 		</div>
 	);
 }

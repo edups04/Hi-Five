@@ -16,6 +16,9 @@ passport.use(new GoogleStrategy({
             });
 
             if (user) {
+                if (user.deactivated === true) {
+                    return cb(null, false, { message: 'deactivated' });
+                }
                 user.googleId = profile.id;
                 user.isLoggedIn = true;
                 user.avatar = user.avatar || profile.photos[0].value;

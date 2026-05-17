@@ -13,8 +13,10 @@ export default function UserManagement({ token, onSelectUser }: {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("");
-  const [selected, setSelected] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deactivationRequests, setDeactivationRequests] = useState<any[]>([]);
+  const [loadingRequests, setLoadingRequests] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -36,35 +38,77 @@ export default function UserManagement({ token, onSelectUser }: {
     }
   }, [token, page, search, filter]);
 
+  const loadRequests = useCallback(async () => {
+    setLoadingRequests(true);
+    try {
+      const res = await fetch(`${API_URL}/admin/deactivation-requests`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) setDeactivationRequests(json.requests);
+    } finally {
+      setLoadingRequests(false);
+    }
+  }, [token]);
+
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { loadRequests(); }, [loadRequests]);
 
-  async function deleteSelected() {
-    if (!selected.length) return;
-    if (!confirm(`Delete ${selected.length} user(s) and all their recordings?`)) return;
-    await fetch(`${API_URL}/admin/users`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ ids: selected }),
-    });
-    setSelected([]);
-    load();
+  async function handleDeactivate(id: string) {
+    setProcessingId(id);
+    try {
+      await fetch(`${API_URL}/admin/deactivate/${id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      loadRequests();
+      load();
+    } finally {
+      setProcessingId(null);
+    }
   }
 
-  async function deleteSingle(id: string) {
-    if (!confirm("Delete this user and all their recordings?")) return;
-    await fetch(`${API_URL}/admin/users/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    load();
+  async function handleRejectDeactivation(id: string) {
+    setProcessingId(id);
+    try {
+      await fetch(`${API_URL}/admin/reject-deactivation/${id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      loadRequests();
+    } finally {
+      setProcessingId(null);
+    }
   }
 
-  function toggleSelect(id: string) {
-    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  async function handleReactivate(id: string) {
+    setProcessingId(id);
+    try {
+      await fetch(`${API_URL}/admin/reactivate/${id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      load();
+    } finally {
+      setProcessingId(null);
+    }
   }
 
-  function toggleAll() {
-    setSelected(prev => prev.length === users.length ? [] : users.map((u: any) => u._id));
+  async function handleUnlock(id: string) {
+    setProcessingId(id);
+    try {
+      await fetch(`${API_URL}/admin/unlock/${id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      load();
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  function isLocked(u: any): boolean {
+    return u.lockedUntil && new Date(u.lockedUntil) > new Date();
   }
 
   const pageNumbers: (number | string)[] = [];
@@ -74,6 +118,45 @@ export default function UserManagement({ token, onSelectUser }: {
   return (
     <div className="admin-content" style={s.content}>
       <h1 className="admin-page-title" style={s.pageTitle}>User Management</h1>
+
+      {(loadingRequests || deactivationRequests.length > 0) && (
+        <div style={um.requestsCard}>
+          <div style={um.requestsHeader}>
+            <span style={um.requestsTitle}>Deactivation Requests</span>
+            <span style={um.requestsBadge}>{deactivationRequests.length}</span>
+          </div>
+          {loadingRequests ? (
+            <div style={um.requestsEmpty}>Loading requests...</div>
+          ) : deactivationRequests.length === 0 ? (
+            <div style={um.requestsEmpty}>No pending requests</div>
+          ) : (
+            <div style={um.requestsList}>
+              {deactivationRequests.map((u: any) => (
+                <div key={u._id} style={um.requestRow}>
+                  <div style={um.requestUser}>
+                    <UserAvatar name={u.username} email={u.email} size={36} />
+                    <div>
+                      <div style={um.requestName}>{u.username || u.email?.split('@')[0]}</div>
+                      <div style={um.requestEmail}>{u.email}</div>
+                      {u.deactivationRequestedAt && (
+                        <div style={um.requestDate}>Requested {formatDate(u.deactivationRequestedAt)}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div style={um.requestActions}>
+                    <button style={um.approveBtn} disabled={processingId === u._id} onClick={() => handleDeactivate(u._id)}>
+                      {processingId === u._id ? 'Processing…' : 'Deactivate'}
+                    </button>
+                    <button style={um.rejectBtn} disabled={processingId === u._id} onClick={() => handleRejectDeactivation(u._id)}>
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="admin-user-mgmt-top" style={um.userMgmtTop}>
         <div style={um.totalCard}>
@@ -110,18 +193,6 @@ export default function UserManagement({ token, onSelectUser }: {
 
       <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #F0D9C8", overflow: "hidden" }}>
         <div style={um.bulkBar}>
-          <input
-            type="checkbox"
-            checked={selected.length === users.length && users.length > 0}
-            onChange={toggleAll}
-            style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#F97316" }}
-          />
-          {selected.length > 0 && (
-            <>
-              <span style={um.bulkCount}>{selected.length} selected</span>
-              <button className="admin-delete-btn" onClick={deleteSelected} style={um.deleteBtn}>🗑 Delete</button>
-            </>
-          )}
           <span style={um.bulkShowing}>Showing {users.length} of {total.toLocaleString()} users</span>
         </div>
 
@@ -129,7 +200,6 @@ export default function UserManagement({ token, onSelectUser }: {
           <table style={s.table}>
             <thead>
               <tr style={s.thead}>
-                <th style={{ width: 48, padding: "10px 16px" }} />
                 {["NAME & IDENTITY", "ROLE", "JOIN DATE", "STATUS", ""].map((h, i) => (
                   <th key={i} style={s.th}>{h}</th>
                 ))}
@@ -137,19 +207,21 @@ export default function UserManagement({ token, onSelectUser }: {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} style={{ padding: 32, textAlign: "center", color: "#9B7355", fontFamily: "'Manrope', sans-serif" }}>Loading...</td></tr>
+                <tr><td colSpan={5} style={{ padding: 32, textAlign: "center", color: "#9B7355", fontFamily: "'Manrope', sans-serif" }}>Loading...</td></tr>
               ) : users.length === 0 ? (
-                <tr><td colSpan={6} style={{ padding: 32, textAlign: "center", color: "#9B7355", fontFamily: "'Manrope', sans-serif" }}>No users found</td></tr>
+                <tr><td colSpan={5} style={{ padding: 32, textAlign: "center", color: "#9B7355", fontFamily: "'Manrope', sans-serif" }}>No users found</td></tr>
               ) : users.map((u: any) => (
-                <tr key={u._id} className="admin-table-row" style={s.tableRow}>
-                  <td style={{ padding: "12px 16px" }}>
-                    <input type="checkbox" checked={selected.includes(u._id)} onChange={() => toggleSelect(u._id)} style={{ width: 16, height: 16, cursor: "pointer", accentColor: "#F97316" }} />
-                  </td>
+                <tr key={u._id} className="admin-table-row" style={{ ...s.tableRow, opacity: u.deactivated ? 0.6 : 1 }}>
                   <td style={s.tdSmall}>
                     <div style={{ ...s.userIdentity, cursor: "pointer" }} onClick={() => onSelectUser(u)}>
                       <UserAvatar name={u.username} email={u.email} size={38} />
                       <div>
-                        <div style={s.userName}>{u.username || u.email.split("@")[0]}</div>
+                        <div style={s.userName}>
+                          {u.username || u.email.split("@")[0]}
+                          {u.deactivated && <span style={um.deactivatedTag}>Deactivated</span>}
+                          {u.deactivationRequested && !u.deactivated && <span style={um.pendingTag}>Pending</span>}
+                          {isLocked(u) && <span style={um.lockedTag}>Locked</span>}
+                        </div>
                         <div style={s.userEmail}>{u.email}</div>
                       </div>
                     </div>
@@ -158,7 +230,26 @@ export default function UserManagement({ token, onSelectUser }: {
                   <td style={{ ...s.tdSmall, fontSize: 13, color: "#3B1A00" }}>{formatDate(u.joinDate)}</td>
                   <td style={s.tdSmall}><StatusBadge active={u.isActive} /></td>
                   <td style={s.tdSmall}>
-                    <button className="admin-delete-btn" onClick={() => deleteSingle(u._id)} style={um.deleteBtnSm}>Delete</button>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      {isLocked(u) && (
+                        <button
+                          onClick={() => handleUnlock(u._id)}
+                          disabled={processingId === u._id}
+                          style={um.unlockBtn}
+                        >
+                          {processingId === u._id ? '…' : 'Unlock'}
+                        </button>
+                      )}
+                      {u.deactivated && (
+                        <button
+                          onClick={() => handleReactivate(u._id)}
+                          disabled={processingId === u._id}
+                          style={um.reactivateBtn}
+                        >
+                          Reactivate
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 
 export const overviewStyles: Record<string, CSSProperties> = {
-  chartWrap: { background: "#fff", borderRadius: "16px", padding: "28px 28px 20px", border: "1px solid #F0D9C8" },
+  chartWrap: { background: "#fff", borderRadius: "16px", padding: "28px 28px 20px", border: "1px solid #F0D9C8", overflowX: "hidden" },
   chartHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" },
   chartTitle: { fontSize: "18px", fontWeight: 800, color: "#3B1A00", fontFamily: "'Manrope', sans-serif", letterSpacing: "-0.01em" },
   chartSub: { fontSize: "13px", color: "#9B7355", marginTop: "2px" },

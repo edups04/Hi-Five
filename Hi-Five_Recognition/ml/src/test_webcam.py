@@ -1,32 +1,3 @@
-"""
-Live webcam test for the trained Hi-Five ASL alphabet model — subtitle mode.
-
-As you sign, letters accumulate into a sentence shown at the bottom of
-the screen. The hard part of "build up a string" is filtering out
-unstable predictions; see SentenceBuilder below for the logic.
-
-Behavior:
-    - A letter is added only when it has been the top prediction for
-      STABILITY_FRAMES consecutive frames, AND its confidence is above
-      MIN_CONFIDENCE, AND it differs from the last letter added.
-    - To repeat the same letter (e.g. spelling "BOOK"), remove your hand
-      or change signs briefly to "reset", then sign the letter again.
-    - `space` sign → appends a literal space.
-    - `del` sign   → removes the last character (acts as backspace).
-
-Controls:
-    q          quit
-    c          clear the sentence
-    backspace  delete the last character manually
-    d          toggle dev overlay (FPS, confidence, landmarks)
-    s          save the current frame to debug_frames/
-
-Usage:
-    python -m src.test_webcam
-    python -m src.test_webcam --camera 1
-    python -m src.test_webcam --min-confidence 0.8 --stability 7
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -40,26 +11,11 @@ import numpy as np
 
 from .predict import AslPredictor
 
-
-# ---- Tunable behavior --------------------------------------------------------
-
-# How many consecutive frames a prediction must hold before it's "committed"
-# to the sentence. Higher = more stable but slower; lower = more responsive
-# but more noise. 5 frames at 30fps is ~170ms — feels snappy without false adds.
 STABILITY_FRAMES = 5
 
-# Predictions below this confidence are ignored entirely. The trained model
-# is usually >0.95 on clean signs, so 0.7 is a generous floor.
 MIN_CONFIDENCE = 0.7
 
-# After committing a letter, you can't commit the SAME letter again until
-# you've signed something different (or "nothing") for this many frames.
-# This is what lets you spell distinct letters without auto-repeating, while
-# still letting "BOOK" work once you reset between Os.
 RESET_FRAMES = 4
-
-
-# ---- Drawing constants (BGR — OpenCV) ----------------------------------------
 
 COLOR_HAND = (0, 255, 0)
 COLOR_TEXT = (255, 255, 255)
@@ -71,19 +27,10 @@ COLOR_NONE = (0, 0, 255)
 SUBTITLE_FONT = cv2.FONT_HERSHEY_DUPLEX
 SUBTITLE_SCALE = 1.0
 SUBTITLE_THICKNESS = 1
-SUBTITLE_BOTTOM_MARGIN = 50  # pixels from the bottom of the frame
+SUBTITLE_BOTTOM_MARGIN = 50 
 
-
-# ---- Sentence-building logic -------------------------------------------------
 
 class SentenceBuilder:
-    """
-    Turns a stream of per-frame predictions into a stable, accumulating
-    sentence. The trick is in `_should_commit`: a prediction has to be
-    stable across multiple frames before we trust it enough to add it
-    to the sentence.
-    """
-
     def __init__(
         self,
         stability_frames: int = STABILITY_FRAMES,
@@ -100,23 +47,13 @@ class SentenceBuilder:
         self._frames_since_commit = 0
 
     def update(self, label: str, confidence: float) -> bool:
-        """
-        Feed one frame's prediction. Returns True if a letter was committed
-        on this frame (useful if you want a "ding" sound effect, etc).
-        """
-        # Track recent predictions for stability check.
         self._recent.append(label if confidence >= self.min_confidence else "_low")
         self._frames_since_commit += 1
-
-        # Once enough frames have passed since the last commit (or we've
-        # been seeing a different letter / nothing), allow re-committing
-        # the same letter.
         if (
             self._last_committed is not None
             and self._frames_since_commit >= self.reset_frames
             and label != self._last_committed
         ):
-            # The "reset" condition has been met; clear the lock.
             self._last_committed = None
 
         if not self._should_commit(label, confidence):
@@ -126,17 +63,14 @@ class SentenceBuilder:
         return True
 
     def _should_commit(self, label: str, confidence: float) -> bool:
-        # Need a full window of consistent, confident predictions.
         if len(self._recent) < self.stability_frames:
             return False
         if confidence < self.min_confidence:
             return False
         if any(r != label for r in self._recent):
             return False
-        # Don't commit "nothing" (no hand) — it's not a letter.
         if label == "nothing":
             return False
-        # Don't double-commit the same letter without a reset.
         if label == self._last_committed:
             return False
         return True
@@ -161,8 +95,6 @@ class SentenceBuilder:
         self.sentence = self.sentence[:-1]
 
 
-# ---- Drawing helpers ---------------------------------------------------------
-
 def draw_landmarks(frame: np.ndarray, raw_landmarks: np.ndarray) -> None:
     h, w = frame.shape[:2]
     pts = raw_landmarks.reshape(21, 3)
@@ -177,20 +109,9 @@ def _fits(text: str, max_width: int) -> bool:
 
 
 def _fit_to_width(text: str, max_width: int) -> str:
-    """
-    Trim `text` from the left so it fits in `max_width` pixels.
-
-    Strategy:
-      1. If the whole string fits, return it unchanged.
-      2. Otherwise drop whole words from the front, one at a time, until
-         what remains fits. (Subtitle-style sliding window.)
-      3. If even the last word alone doesn't fit (very long single word),
-         fall back to cropping characters from its left with a leading "…".
-    """
     if _fits(text, max_width):
         return text
 
-    # Step 2: drop whole words from the left.
     words = text.split(" ")
     while len(words) > 1:
         words.pop(0)
@@ -198,7 +119,6 @@ def _fit_to_width(text: str, max_width: int) -> str:
         if _fits(candidate, max_width):
             return candidate
 
-    # Step 3: only one word left and it still overflows. Crop chars.
     last = words[0]
     while last:
         candidate = "…" + last[1:]
@@ -209,12 +129,10 @@ def _fit_to_width(text: str, max_width: int) -> str:
 
 
 def draw_subtitle(frame: np.ndarray, text: str) -> None:
-    """Draw the accumulating sentence at the bottom with a soft shadow."""
     if not text:
         return
     h, w = frame.shape[:2]
 
-    # Reserve 80px of margin (40 each side) so text doesn't kiss the edges.
     max_width = w - 80
     display = _fit_to_width(text, max_width)
     if not display:
@@ -224,7 +142,6 @@ def draw_subtitle(frame: np.ndarray, text: str) -> None:
     x = (w - tw) // 2
     y = h - SUBTITLE_BOTTOM_MARGIN
 
-    # Multi-pass shadow for a soft drop-shadow effect (cheap blur).
     for dx, dy in [(-2, -2), (-2, 2), (2, -2), (2, 2), (0, 3)]:
         cv2.putText(
             frame, display, (x + dx, y + dy),
@@ -246,7 +163,6 @@ def draw_dev_overlay(
     fps: float,
     min_confidence: float,
 ) -> None:
-    """Top-left dev info: current prediction, confidence, FPS."""
     if not hand_detected:
         color, text = COLOR_NONE, "no hand"
     elif confidence < min_confidence:
@@ -263,16 +179,12 @@ def draw_dev_overlay(
 
 
 def draw_hint_bar(frame: np.ndarray, debug: bool) -> None:
-    """Top-right keyboard-shortcut reminder."""
     h, w = frame.shape[:2]
     debug_state = "on" if debug else "off"
     hint = f"q quit  |  c clear  |  bksp delete  |  d debug ({debug_state})  |  s save"
     (tw, _), _ = cv2.getTextSize(hint, cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1)
     cv2.putText(frame, hint, (w - tw - 20, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.45, COLOR_TEXT, 1, cv2.LINE_AA)
-
-
-# ---- Main loop ---------------------------------------------------------------
 
 def run(
     camera_index: int = 0,
@@ -301,7 +213,7 @@ def run(
         min_confidence=min_confidence,
     )
     frame_times: deque[float] = deque(maxlen=30)
-    debug_overlay = False  # toggle with 'd'
+    debug_overlay = False 
 
     print("[run] Webcam open.")
     print("      q=quit  c=clear  backspace=delete  d=debug  s=save")
@@ -314,30 +226,25 @@ def run(
                 print("[warn] Camera read failed; stopping.")
                 break
 
-            bgr_frame = cv2.flip(bgr_frame, 1)  # mirror
+            bgr_frame = cv2.flip(bgr_frame, 1) 
             rgb_frame = cv2.cvtColor(bgr_frame, cv2.COLOR_BGR2RGB)
 
-            # Inference. Going one level under predict_from_rgb so we can
-            # also draw landmarks when debug is on.
-            er = predictor._extractor.extract(rgb_frame)  # noqa: SLF001
+            er = predictor._extractor.extract(rgb_frame)  
             if er.found:
                 features = er.normalized.reshape(1, -1)
-                probs = predictor._clf.predict_proba(features)[0]  # noqa: SLF001
+                probs = predictor._clf.predict_proba(features)[0] 
                 best = int(np.argmax(probs))
-                label = str(predictor._encoder.inverse_transform([best])[0])  # noqa: SLF001
+                label = str(predictor._encoder.inverse_transform([best])[0])  
                 confidence = float(probs[best])
             else:
                 label, confidence = "nothing", 1.0
 
-            # Feed into the sentence builder.
             builder.update(label, confidence)
 
-            # FPS book-keeping.
             frame_times.append(time.time() - t0)
             avg_dt = sum(frame_times) / len(frame_times)
             fps = 1.0 / avg_dt if avg_dt > 0 else 0.0
 
-            # Draw.
             if debug_overlay:
                 if er.found:
                     draw_landmarks(bgr_frame, er.raw_landmarks)
@@ -351,14 +258,13 @@ def run(
 
             cv2.imshow("Hi-Five — webcam test", bgr_frame)
 
-            # Handle keys.
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
                 break
             elif key == ord("c"):
                 builder.clear()
                 print("[key] Sentence cleared.")
-            elif key == 8:  # backspace
+            elif key == 8: 
                 builder.backspace()
             elif key == ord("d"):
                 debug_overlay = not debug_overlay

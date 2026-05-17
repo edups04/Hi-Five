@@ -98,18 +98,20 @@ export function BarChart({ data, year, onYearChange, loading = false }: { data: 
           {[currentYear - 1, currentYear, currentYear + 1].map(y => <option key={y} value={y}>Year {y}</option>)}
         </select>
       </div>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 200 }}>
-        {data.map((d, i) => {
-          const h = max > 0 ? Math.max((d.count / max) * 160, d.count > 0 ? 8 : 3) : 3;
-          const isCurrentMonth = year === currentYear && i === currentMonth;
-          return (
-            <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-              {d.count > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: isCurrentMonth ? "#F97316" : "#9B7355" }}>{d.count}</div>}
-              <div style={{ width: "100%", height: h, borderRadius: "6px 6px 0 0", background: isCurrentMonth ? "#F97316" : "#E8D5C4", transition: "height 0.4s ease", opacity: loading ? 0.4 : 1 }} />
-              <div style={{ fontSize: 11, fontWeight: 600, color: "#9B7355" }}>{MONTH_NAMES[i]}</div>
-            </div>
-          );
-        })}
+      <div style={{ overflowX: "auto", overflowY: "visible" }}>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 200, minWidth: 480 }}>
+          {data.map((d, i) => {
+            const h = max > 0 ? Math.max((d.count / max) * 160, d.count > 0 ? 8 : 3) : 3;
+            const isCurrentMonth = year === currentYear && i === currentMonth;
+            return (
+              <div key={i} style={{ flex: 1, minWidth: 28, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                {d.count > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: isCurrentMonth ? "#F97316" : "#9B7355" }}>{d.count}</div>}
+                <div style={{ width: "100%", height: h, borderRadius: "6px 6px 0 0", background: isCurrentMonth ? "#F97316" : "#E8D5C4", transition: "height 0.4s ease", opacity: loading ? 0.4 : 1 }} />
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#9B7355" }}>{MONTH_NAMES[i]}</div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import logo from "../assets/Hi-five.png";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -263,6 +263,18 @@ export default function AuthPage() {
     const loginOtpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     const navigate = useNavigate();
+
+    useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const err = params.get('error');
+    if (err === 'deactivated') {
+        setError("Your account is deactivated. Please sign up to create a new account.");
+        window.history.replaceState({}, '', '/auth');
+    } else if (err === 'google_failed') {
+        setError("Google login failed. Please try again.");
+        window.history.replaceState({}, '', '/auth');
+    }
+}, []);
 
     function clearForm() {
         setEmail(""); setPassword(""); setUsername("");

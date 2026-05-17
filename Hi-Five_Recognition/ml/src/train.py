@@ -1,22 +1,3 @@
-"""
-Train the XGBoost ASL alphabet classifier from a landmarks CSV.
-
-Input:  data/landmarks.csv  (produced by extract_features.py)
-Output: models/asl_xgb.json + models/label_encoder.pkl
-
-The training setup mirrors Valentinetemi's reference repo (the
-MediaPipe-landmarks + XGBoost pipeline reporting 98.43% accuracy):
-    - 80/20 stratified train/test split
-    - LabelEncoder for class labels (XGBoost wants integers)
-    - XGBClassifier with multi-class softprob
-    - Reports accuracy, classification report, and confusion matrix
-
-Usage:
-    python -m src.train
-    python -m src.train --csv data/landmarks.csv --out-dir models
-    python -m src.train --quick    # smaller, faster training for smoke tests
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -67,20 +48,17 @@ def train(
 ) -> None:
     X, y_str = load_dataset(csv_path)
 
-    # Encode string labels -> integers for XGBoost.
     le = LabelEncoder()
     y = le.fit_transform(y_str)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y,
         test_size=test_size,
-        stratify=y,            # keeps class balance in both splits
+        stratify=y,            
         random_state=random_state,
     )
     print(f"[split] train={len(X_train):,}  test={len(X_test):,}")
 
-    # Hyperparameters: defaults are reasonable for this many features (63)
-    # and this many classes (~28). `quick` mode is for smoke-testing the pipeline.
     if quick:
         params = dict(n_estimators=50, max_depth=4, learning_rate=0.3)
     else:
@@ -89,7 +67,7 @@ def train(
     clf = XGBClassifier(
         objective="multi:softprob",
         num_class=len(le.classes_),
-        tree_method="hist",        # fast and CPU-friendly
+        tree_method="hist",    
         n_jobs=-1,
         eval_metric="mlogloss",
         random_state=random_state,
@@ -103,7 +81,6 @@ def train(
         verbose=False,
     )
 
-    # --- Evaluate ---
     y_pred = clf.predict(X_test)
     acc = accuracy_score(y_test, y_pred)
     print(f"\n[eval] Test accuracy: {acc * 100:.2f}%")
@@ -114,9 +91,6 @@ def train(
         digits=3,
     ))
 
-    # Print a confusion matrix in plain text. (Skip the matplotlib heatmap here
-    # to keep the script dependency-light; you can always plot the matrix from
-    # a notebook if you want a visual.)
     cm = confusion_matrix(y_test, y_pred)
     print("[eval] Confusion matrix (rows=true, cols=pred):")
     header = "      " + " ".join(f"{c:>4}" for c in le.classes_)
@@ -124,7 +98,6 @@ def train(
     for cls, row in zip(le.classes_, cm):
         print(f"{cls:>5} " + " ".join(f"{v:>4}" for v in row))
 
-    # --- Save ---
     out_dir.mkdir(parents=True, exist_ok=True)
     model_path = out_dir / "asl_xgb.json"
     encoder_path = out_dir / "label_encoder.pkl"

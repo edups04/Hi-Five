@@ -22,15 +22,23 @@ function generateAuthCode(userId, email) {
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
 
 router.get("/google/callback",
-    passport.authenticate("google", { session: false }),
-    (req, res) => {
-        try {
-            const code = generateAuthCode(req.user._id, req.user.email);
-            res.redirect(`${process.env.CLIENT_URL}/auth-success?code=${code}`);
-        } catch (error) {
-            console.error("Google login error:", error);
-            res.redirect(`${process.env.CLIENT_URL}/auth?error=google_failed`);
-        }
+    (req, res, next) => {
+        passport.authenticate("google", { session: false }, async (err, user, info) => {
+            if (err) {
+                return res.redirect(`${process.env.CLIENT_URL}/auth?error=google_failed`);
+            }
+            if (!user) {
+                const reason = info?.message === 'deactivated' ? 'deactivated' : 'google_failed';
+                return res.redirect(`${process.env.CLIENT_URL}/auth?error=${reason}`);
+            }
+            try {
+                const code = generateAuthCode(user._id, user.email);
+                res.redirect(`${process.env.CLIENT_URL}/auth-success?code=${code}`);
+            } catch (error) {
+                console.error("Google login error:", error);
+                res.redirect(`${process.env.CLIENT_URL}/auth?error=google_failed`);
+            }
+        })(req, res, next);
     }
 );
 

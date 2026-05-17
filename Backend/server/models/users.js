@@ -12,6 +12,11 @@ const UserSchema = new mongoose.Schema({
     isVerified: { type: Boolean, default: false },
     isLoggedIn: { type: Boolean, default: false },
     token: { type: String, default: null },
+    deactivated: { type: Boolean, default: false },
+    deactivationRequested: { type: Boolean, default: false },
+    deactivationRequestedAt: { type: Date, default: null },
+    loginAttempts: { type: Number, default: 0 },
+    lockedUntil: { type: Date, default: null },
 }, { timestamps: true });
 
 const UsersModel = mongoose.model('Users', UserSchema);

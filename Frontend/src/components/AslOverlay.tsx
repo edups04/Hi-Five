@@ -179,6 +179,10 @@ export default function ASLOverlay({ visible, onClose }: ASLOverlayProps) {
         .asl-grid-wrap {
           animation: gridFadeIn 0.2s ease forwards;
         }
+        .asl-grid-wrap::-webkit-scrollbar { width: 4px; }
+        .asl-grid-wrap::-webkit-scrollbar-track { background: transparent; }
+        .asl-grid-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; 
+        }
       `}</style>
 
       <div
@@ -199,7 +203,7 @@ export default function ASLOverlay({ visible, onClose }: ASLOverlayProps) {
             width: "100%", maxWidth: "990px",
             background: "rgba(0, 0, 0, 0.9)",
             border: "1px solid rgba(255, 255, 255, 0.25)",
-            borderRadius: "20px", padding: "28px 32px",
+            borderRadius: "20px", padding: "20px 16px",
             boxShadow: "0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(249,115,22,0.1) inset",
             fontFamily: "'Manrope', sans-serif",
           }}
@@ -231,7 +235,7 @@ export default function ASLOverlay({ visible, onClose }: ASLOverlayProps) {
           <div
             key={mode}
             className="asl-grid-wrap"
-            style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: "10px", opacity: animatingSwitch ? 0 : 1, transition: "opacity 0.18s ease" }}
+            style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(44px, 1fr))", gap: "8px", overflowY: "auto", maxHeight: "55vh", paddingRight: "4px", opacity: animatingSwitch ? 0 : 1, transition: "opacity 0.18s ease", }}
           >
             {LETTERS.map((letter, i) => (
               <div
@@ -242,7 +246,7 @@ export default function ASLOverlay({ visible, onClose }: ASLOverlayProps) {
                 <img
                   src={images[letter]}
                   alt={`${mode.toUpperCase()} sign for ${letter}`}
-                  style={{ width: "60px", height: "60px", objectFit: "contain" }}
+                  style={{ width: "clamp(36px, 8vw, 60px)", height: "clamp(36px, 8vw, 60px)", objectFit: "contain" }}
                 />
                 <span style={{ fontSize: "13px", fontWeight: 700, color: "#ffffff", fontFamily: "'Manrope', sans-serif", letterSpacing: "-0.01em" }}>
                   {letter}

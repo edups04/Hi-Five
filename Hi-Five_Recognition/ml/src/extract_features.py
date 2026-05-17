@@ -1,44 +1,3 @@
-"""
-Extract MediaPipe hand landmarks from the Kaggle ASL Alphabet dataset.
-
-Input:
-    A directory of class subfolders, e.g.
-        data/asl_alphabet_train/
-            A/  A1.jpg, A2.jpg, ...
-            B/  ...
-            ...
-            space/
-            del/
-            (nothing/  -- skipped, see note below)
-
-Output:
-    A CSV with 63 feature columns + 1 label column.
-
-Why we skip the `nothing` class here:
-    Images in `nothing/` have no hand. MediaPipe will return no landmarks
-    for them, so they would all be dropped anyway. The `nothing` decision
-    is handled at inference time: if the extractor returns found=False,
-    the API responds with `nothing` directly without invoking XGBoost.
-
-Why ~20-25% of images get dropped:
-    The Kaggle dataset includes hands at extreme angles, partially out
-    of frame, or against low-contrast backgrounds where MediaPipe can't
-    locate 21 keypoints. Dropping them is correct — those samples would
-    just be noise. We log the per-class detection rate so you can see
-    if any class is suspiciously low.
-
-Usage:
-    python -m src.extract_features \
-        --data-dir data/asl_alphabet_train \
-        --output data/landmarks.csv
-
-    # Resume an interrupted run:
-    python -m src.extract_features \
-        --data-dir data/asl_alphabet_train \
-        --output data/landmarks.csv \
-        --resume
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -55,15 +14,11 @@ from tqdm import tqdm
 
 from .landmarks import FEATURE_DIM, HandLandmarkExtractor
 
-# Classes we want from the Kaggle dataset. We deliberately exclude `nothing`
-# (handled at inference time, see module docstring).
 EXPECTED_CLASSES = (
     [chr(c) for c in range(ord("A"), ord("Z") + 1)]
     + ["space", "del"]
 )
 
-# Image extensions we'll consider. The Kaggle dataset is .jpg, but being
-# permissive here is harmless.
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp"}
 
 
@@ -124,7 +79,6 @@ def extract_dataset(
     open_mode = "a" if (resume and already_done) else "w"
 
     if open_mode == "w":
-        # Fresh run: write the header.
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with output_path.open("w", newline="") as f:
             writer = csv.writer(f)
@@ -156,7 +110,6 @@ def extract_dataset(
 
                 total_per_class[cls] += 1
 
-                # cv2.imread returns BGR or None on read failure.
                 bgr = cv2.imread(str(img_path))
                 if bgr is None:
                     failed_per_class[cls] += 1
@@ -165,13 +118,12 @@ def extract_dataset(
 
                 try:
                     result = extractor.extract(rgb)
-                except Exception as e:  # noqa: BLE001 — robust to MP errors
+                except Exception as e:  
                     failed_per_class[cls] += 1
                     print(f"[warn] MediaPipe error on {img_path}: {e}", file=sys.stderr)
                     continue
 
                 if not result.found:
-                    # Hand not detected. Expected for a chunk of the dataset.
                     continue
 
                 detected_per_class[cls] += 1
@@ -179,10 +131,8 @@ def extract_dataset(
                     list(result.normalized.tolist()) + [cls, rel_key]
                 )
 
-            # Flush per class so a crash doesn't lose everything.
             f.flush()
 
-    # --- Summary ---
     elapsed = time.time() - t_start
     print(f"\n[done] Extracted in {elapsed:.1f}s")
     print(f"{'class':>6}  {'total':>7}  {'detected':>9}  {'rate':>6}")

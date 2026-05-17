@@ -93,7 +93,7 @@ router.get('/stats', isAdmin, async (req, res) => {
         const recentUsers = await UsersModel.find()
             .sort({ createdAt: -1 })
             .limit(5)
-            .select('username email createdAt googleId');
+            .select('username email createdAt googleId lockedUntil loginAttempts deactivated deactivationRequested');
 
         const thirtyDaysAgoDate = thirtyDaysAgo;
         const recentActivity = await Recording.find({ createdAt: { $gte: thirtyDaysAgoDate } })
@@ -154,7 +154,7 @@ router.get('/users', isAdmin, async (req, res) => {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
-            .select('username email createdAt googleId');
+            .select('username email createdAt googleId lockedUntil loginAttempts deactivated deactivationRequested');
 
         const total = await UsersModel.countDocuments(query);
 
@@ -176,6 +176,10 @@ router.get('/users', isAdmin, async (req, res) => {
                     lastActive: lastRec ? lastRec.createdAt : null,
                     isActive: !!isActive,
                     authMethod: u.googleId ? 'google' : 'email',
+                    lockedUntil: u.lockedUntil || null,
+                    loginAttempts: u.loginAttempts || 0,
+                    deactivated: u.deactivated || false,
+                    deactivationRequested: u.deactivationRequested || false,
                 };
             })
         );
@@ -196,7 +200,7 @@ router.get('/users', isAdmin, async (req, res) => {
 
 router.get('/users/:id', isAdmin, async (req, res) => {
     try {
-        const user = await UsersModel.findById(req.params.id).select('username email createdAt googleId');
+        const user = await UsersModel.findById(req.params.id).select('username email createdAt googleId lockedUntil loginAttempts deactivated deactivationRequested');
         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
         const recordings = await Recording.find({ userId: user._id })
@@ -341,5 +345,97 @@ router.get('/logs/export', isAdmin, async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
+router.get('/deactivation-requests', isAdmin, async (req, res) => {
+    try {
+        const requests = await UsersModel.find({ deactivationRequested: true })
+            .select('-password -twoFactorSecret')
+            .sort({ deactivationRequestedAt: -1 });
+        res.json({ success: true, requests });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.post('/deactivate/:id', isAdmin, async (req, res) => {
+    try {
+        const user = await UsersModel.findByIdAndUpdate(
+            req.params.id,
+            { deactivated: true, deactivationRequested: false },
+            { new: true }
+        ).select('-password -twoFactorSecret');
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        await writeLog({
+            actor: 'admin',
+            type: 'Admin Action',
+            severity: 'WARNING',
+            action: 'admin.user_deactivated',
+            description: `Admin deactivated account "${user.username || user.email}"`,
+            ip: req.ip,
+        });
+        res.json({ success: true, user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.post('/reactivate/:id', isAdmin, async (req, res) => {
+    try {
+        const user = await UsersModel.findByIdAndUpdate(
+            req.params.id,
+            { deactivated: false, deactivationRequested: false, deactivationRequestedAt: null },
+            { new: true }
+        ).select('-password -twoFactorSecret');
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        await writeLog({
+            actor: 'admin',
+            type: 'Admin Action',
+            severity: 'INFO',
+            action: 'admin.user_reactivated',
+            description: `Admin reactivated account "${user.username || user.email}"`,
+            ip: req.ip,
+        });
+        res.json({ success: true, user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.post('/reject-deactivation/:id', isAdmin, async (req, res) => {
+    try {
+        const user = await UsersModel.findByIdAndUpdate(
+            req.params.id,
+            { deactivationRequested: false, deactivationRequestedAt: null },
+            { new: true }
+        ).select('-password -twoFactorSecret');
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        res.json({ success: true, user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.post('/unlock/:id', isAdmin, async (req, res) => {
+    try {
+        const user = await UsersModel.findByIdAndUpdate(
+            req.params.id,
+            { loginAttempts: 0, lockedUntil: null },
+            { new: true }
+        ).select('-password -twoFactorSecret');
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        await writeLog({
+            actor: 'admin',
+            type: 'Admin Action',
+            severity: 'INFO',
+            action: 'admin.user_unlocked',
+            description: `Admin unlocked account "${user.username || user.email}"`,
+            ip: req.ip,
+        });
+        res.json({ success: true, user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 
 module.exports = router;

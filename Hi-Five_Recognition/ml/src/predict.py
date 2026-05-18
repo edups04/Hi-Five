@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from cProfile import label
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any
@@ -16,14 +17,14 @@ NOTHING_LABEL = "nothing"
 @dataclass
 class Prediction:
     label: str
-    confidence: float        
+    confidence: float
     hand_detected: bool
+    hand_count: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         d = asdict(self)
         d["confidence"] = round(self.confidence, 4)
         return d
-
 
 class AslPredictor:
     def __init__(
@@ -56,10 +57,11 @@ class AslPredictor:
         result = self._extractor.extract(rgb_image)
         if not result.found:
             return Prediction(
-                label=NOTHING_LABEL,
-                confidence=1.0,        
-                hand_detected=False,
-            )
+            label=NOTHING_LABEL,
+            confidence=1.0,
+            hand_detected=False,
+            hand_count=0,
+        )
 
         features = result.normalized.reshape(1, -1)
         probs = self._clf.predict_proba(features)[0]
@@ -71,6 +73,7 @@ class AslPredictor:
             label=label,
             confidence=confidence,
             hand_detected=True,
+            hand_count=result.hand_count,
         )
 
 

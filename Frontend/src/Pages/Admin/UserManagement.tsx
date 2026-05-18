@@ -81,19 +81,6 @@ export default function UserManagement({ token, onSelectUser }: {
     }
   }
 
-  async function handleReactivate(id: string) {
-    setProcessingId(id);
-    try {
-      await fetch(`${API_URL}/admin/reactivate/${id}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      load();
-    } finally {
-      setProcessingId(null);
-    }
-  }
-
   async function handleUnlock(id: string) {
     setProcessingId(id);
     try {
@@ -232,21 +219,8 @@ export default function UserManagement({ token, onSelectUser }: {
                   <td style={s.tdSmall}>
                     <div style={{ display: "flex", gap: 6 }}>
                       {isLocked(u) && (
-                        <button
-                          onClick={() => handleUnlock(u._id)}
-                          disabled={processingId === u._id}
-                          style={um.unlockBtn}
-                        >
+                        <button onClick={() => handleUnlock(u._id)} disabled={processingId === u._id} style={um.unlockBtn}>
                           {processingId === u._id ? '…' : 'Unlock'}
-                        </button>
-                      )}
-                      {u.deactivated && (
-                        <button
-                          onClick={() => handleReactivate(u._id)}
-                          disabled={processingId === u._id}
-                          style={um.reactivateBtn}
-                        >
-                          Reactivate
                         </button>
                       )}
                     </div>

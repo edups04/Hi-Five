@@ -3,6 +3,7 @@ const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { isAuthenticated } = require('../middleware/isAuthenticated');
+const UsersModel = require('../models/users');
 
 const router = express.Router();
 
@@ -42,7 +43,7 @@ router.get("/google/callback",
     }
 );
 
-router.post("/exchange-code", (req, res) => {
+router.post("/exchange-code", async (req, res) => {
     const { code } = req.body;
     if (!code) {
         return res.status(400).json({ success: false, message: "Missing code" });
@@ -59,13 +60,15 @@ router.post("/exchange-code", (req, res) => {
 
     authCodes.delete(code);
 
+    const user = await UsersModel.findById(entry.userId).select('role');
+    const role = user?.role || 'user';
+
     const token = jwt.sign(
-        { id: entry.userId, email: entry.email },
+        { id: entry.userId, email: entry.email, role },
         process.env.SECRET_KEY,
         { expiresIn: "7d" }
     );
-
-    res.json({ success: true, token });
+    res.json({ success: true, token, role });
 });
 
 router.get("/me", isAuthenticated, (req, res) => {

@@ -12,6 +12,7 @@ const UserSchema = new mongoose.Schema({
     isVerified: { type: Boolean, default: false },
     isLoggedIn: { type: Boolean, default: false },
     token: { type: String, default: null },
+    role: { type: String, default: 'user' },
     deactivated: { type: Boolean, default: false },
     deactivationRequested: { type: Boolean, default: false },
     deactivationRequestedAt: { type: Date, default: null },

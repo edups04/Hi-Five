@@ -89,6 +89,8 @@ export function useFrameCapture(
         const prediction = await predictFrame(dataUrl, controller.signal, mode);
         if (!prediction) return;
 
+        if ((prediction.hand_count ?? 0) > 1) return;
+
         builder.update(prediction.label, prediction.confidence);
 
         setLastPrediction(prediction);

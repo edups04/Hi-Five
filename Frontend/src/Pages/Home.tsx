@@ -134,7 +134,7 @@ function Home() {
 
   async function startRecording() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false});
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;

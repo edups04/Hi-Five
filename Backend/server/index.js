@@ -40,32 +40,13 @@ app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const ip = req.ip;
 
-    const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD;
-
-    if (adminPassword && email === adminUsername && password === adminPassword) {
-        const token = jwt.sign(
-            { role: 'admin', username: adminUsername },
-            process.env.ADMIN_SECRET,
-            { expiresIn: '8h' }
-        );
-        await writeLog({
-            actor: adminUsername,
-            type: 'Security',
-            severity: 'INFO',
-            action: 'admin.login',
-            description: 'Admin logged in via login page',
-            ip,
-        });
-        return res.json({ success: true, message: "Login successful", token, role: 'admin' });
-    }
-
     UsersModel.findOne({ email })
     .then(user => {
         if (user) {
             if (user.lockedUntil && user.lockedUntil > new Date()) {
                 const minutesLeft = Math.ceil((user.lockedUntil - Date.now()) / 60000);
-                return res.json({ success: false, message: `Your account is temporarily locked. Please try again in ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''}.` });}
+                return res.json({ success: false, message: `Your account is temporarily locked. Please try again in ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''}.` });
+            }
             bcrypt.compare(password, user.password, async (err, response) => {
                 if (response) {
                     if (user.deactivated === true) {
@@ -76,6 +57,24 @@ app.post('/login', async (req, res) => {
                         return res.json({ success: false, message: `Your account is temporarily locked. Please try again in ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''}.` });
                     }
                     await UsersModel.findByIdAndUpdate(user._id, { loginAttempts: 0, lockedUntil: null });
+
+                    if (user.role === 'admin') {
+                        const token = jwt.sign(
+                            { id: user._id, email: user.email, role: 'admin' },
+                            process.env.SECRET_KEY,
+                            { expiresIn: '8h' }
+                        );
+                        await writeLog({
+                            actor: user.email,
+                            actorId: user._id,
+                            type: 'Security',
+                            severity: 'INFO',
+                            action: 'admin.login',
+                            description: `Admin "${user.username || user.email}" logged in`,
+                            ip,
+                        });
+                        return res.json({ success: true, message: "Login successful", token, role: 'admin' });
+                    }
 
                     if (user.twoFactorEnabled && user.twoFactorSecret) {
                         await writeLog({
@@ -91,7 +90,7 @@ app.post('/login', async (req, res) => {
                     }
 
                     const token = jwt.sign(
-                        { id: user._id, email: user.email },
+                        { id: user._id, email: user.email, role: user.role || 'user' },
                         process.env.SECRET_KEY,
                         { expiresIn: "7d" }
                     );
@@ -106,14 +105,6 @@ app.post('/login', async (req, res) => {
                     });
                     res.json({ success: true, message: "Login successful", token });
                 } else {
-                    await writeLog({
-                        actor: email,
-                        type: 'Security',
-                        severity: 'WARNING',
-                        action: 'user.login.failed',
-                        description: `Failed login attempt for email: "${email}"`,
-                        ip,
-                    });
                     const MAX_ATTEMPTS = 5;
                     const LOCK_MINUTES = 15;
                     const attempts = (user.loginAttempts || 0) + 1;
@@ -175,11 +166,8 @@ app.post('/signup', async (req, res) => {
     const failed = passwordRules.find(r => !r.test(password));
     if (failed) return res.status(400).json({ success: false, message: failed.msg });
 
-    const existingEmail = await UsersModel.findOne({ email });
+    const existingEmail = await UsersModel.findOne({ email, deactivated: { $ne: true } });
     if (existingEmail) {
-        if (existingEmail.deactivated) {
-            return res.status(400).json({ success: false, message: "This email belongs to a deactivated account. Please use a different email or contact support." });
-        }
         return res.status(400).json({ success: false, message: "An account with this email already exists." });
     }
 
@@ -229,22 +217,27 @@ app.post('/forgot-password', async (req, res) => {
 
         const token = jwt.sign({ id: user._id, email: user.email }, process.env.SECRET_KEY, { expiresIn: "1h" });
 
-        await resend.emails.send({
-            from: `Hi-Five <onboarding@resend.dev>`,
-            to: user.email,
-            subject: 'Password Reset Request — Hi-Five',
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #FAF0E8; border-radius: 16px;">
-                    <h2 style="color: #C2410C; font-size: 22px; margin: 0 0 8px;">Password Reset</h2>
-                    <p style="color: #9B7355; font-size: 14px; margin: 0 0 24px;">You requested a password reset for your Hi-Five account.</p>
-                    <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${user._id}/${token}"
-                    style="display: inline-block; background: #92400E; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 14px;">
-                        Reset Password
-                    </a>
-                    <p style="color: #C8A882; font-size: 12px; margin: 24px 0 0;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
-                </div>
-            `,
-        });
+        try {
+            await resend.emails.send({
+                from: `Hi-Five <onboarding@resend.dev>`,
+                to: user.email,
+                subject: 'Password Reset Request — Hi-Five',
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #FAF0E8; border-radius: 16px;">
+                        <h2 style="color: #C2410C; font-size: 22px; margin: 0 0 8px;">Password Reset</h2>
+                        <p style="color: #9B7355; font-size: 14px; margin: 0 0 24px;">You requested a password reset for your Hi-Five account.</p>
+                        <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/reset-password/${user._id}/${token}"
+                        style="display: inline-block; background: #92400E; color: #fff; text-decoration: none; padding: 12px 28px; border-radius: 50px; font-weight: 700; font-size: 14px;">
+                            Reset Password
+                        </a>
+                        <p style="color: #C8A882; font-size: 12px; margin: 24px 0 0;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+                    </div>
+                `,
+            });
+        } catch (emailErr) {
+            console.error('[forgot-password] Email send failed:', emailErr);
+            return res.status(500).send({ Status: "Failed to send reset email. Please contact support." });
+        }
 
         await writeLog({
             actor: email,
@@ -365,19 +358,19 @@ app.post('/request-deactivation', async (req, res) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.status(401).json({ success: false, message: 'No token provided' });
- 
+
     jwt.verify(token, process.env.SECRET_KEY, async (err, decoded) => {
         if (err) return res.status(403).json({ success: false, message: 'Invalid token' });
- 
+
         try {
             const user = await UsersModel.findById(decoded.id);
             if (!user) return res.status(404).json({ success: false, message: 'User not found' });
- 
+
             await UsersModel.findByIdAndUpdate(decoded.id, {
                 deactivationRequested: true,
                 deactivationRequestedAt: new Date(),
             });
- 
+
             await writeLog({
                 actor: user.email,
                 actorId: user._id,
@@ -387,7 +380,7 @@ app.post('/request-deactivation', async (req, res) => {
                 description: `User "${user.username || user.email}" requested account deactivation`,
                 ip: req.ip,
             });
- 
+
             res.json({ success: true, message: 'Deactivation request submitted. An admin will review your request.' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
@@ -496,7 +489,7 @@ app.post('/verify-2fa-trusted', async (req, res) => {
 app.post('/check-duplicate', async (req, res) => {
     const { email, username } = req.body;
     try {
-        const existingEmail = await UsersModel.findOne({ email });
+        const existingEmail = await UsersModel.findOne({ email, deactivated: { $ne: true } });
         if (existingEmail) return res.json({ available: false, message: "An account with this email already exists." });
 
         const existingUsername = await UsersModel.findOne({ username });

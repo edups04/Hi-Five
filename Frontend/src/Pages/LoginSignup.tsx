@@ -265,16 +265,16 @@ export default function AuthPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const err = params.get('error');
-    if (err === 'deactivated') {
-        setError("Your account is deactivated. Please sign up to create a new account.");
-        window.history.replaceState({}, '', '/auth');
-    } else if (err === 'google_failed') {
-        setError("Google login failed. Please try again.");
-        window.history.replaceState({}, '', '/auth');
-    }
-}, []);
+        const params = new URLSearchParams(window.location.search);
+        const err = params.get('error');
+        if (err === 'deactivated') {
+            setError("Your account is deactivated. Please sign up to create a new account.");
+            window.history.replaceState({}, '', '/auth');
+        } else if (err === 'google_failed') {
+            setError("Google login failed. Please try again.");
+            window.history.replaceState({}, '', '/auth');
+        }
+    }, []);
 
     function clearForm() {
         setEmail(""); setPassword(""); setUsername("");
@@ -378,6 +378,9 @@ export default function AuthPage() {
                 twoFactorSecret: qrSecret,
             });
             if (result.data.success) {
+                if (result.data.user?._id) {
+                    setTrustedDevice(result.data.user._id);
+                }
                 setShow2FA(false);
                 setTab("login");
                 clearForm();
@@ -619,6 +622,9 @@ export default function AuthPage() {
                                         <ShieldCheck size={22} color="#F97316" strokeWidth={2} />
                                         <h2 style={st.modalTitle}>Set Up Two-Factor Authentication</h2>
                                     </div>
+                                    <button type="button" onClick={() => { setShow2FA(false); resetSignupFields(); }} style={st.modalCloseBtn} className="auth-modal-close">
+                                        <X size={20} strokeWidth={2} />
+                                    </button>
                                 </div>
                                 <div style={st.modalBody}>
                                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
@@ -652,6 +658,9 @@ export default function AuthPage() {
                                         <ShieldCheck size={22} color="#F97316" strokeWidth={2} />
                                         <h2 style={st.modalTitle}>Enter Verification Code</h2>
                                     </div>
+                                    <button type="button" onClick={() => { setShow2FA(false); resetSignupFields(); }} style={st.modalCloseBtn} className="auth-modal-close">
+                                        <X size={20} strokeWidth={2} />
+                                    </button>
                                 </div>
                                 <div style={st.modalBody}>
                                     <p style={{ margin: 0, fontSize: 13, color: "#9B7355", fontFamily: "'Manrope', sans-serif", lineHeight: 1.6 }}>

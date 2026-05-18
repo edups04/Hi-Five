@@ -11,32 +11,31 @@ from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision as mp_vision
 
 
-NUM_LANDMARKS = 21          
-COORDS_PER_LANDMARK = 3     
-RAW_FEATURE_DIM = NUM_LANDMARKS * COORDS_PER_LANDMARK  
+NUM_LANDMARKS = 21
+COORDS_PER_LANDMARK = 3
+RAW_FEATURE_DIM = NUM_LANDMARKS * COORDS_PER_LANDMARK
 ENGINEERED_FEATURE_DIM = 27
-FEATURE_DIM = RAW_FEATURE_DIM + ENGINEERED_FEATURE_DIM 
+FEATURE_DIM = RAW_FEATURE_DIM + ENGINEERED_FEATURE_DIM
 
-WRIST_IDX = 0               
-MIDDLE_FINGER_MCP_IDX = 9   
+WRIST_IDX = 0
+MIDDLE_FINGER_MCP_IDX = 9
 
 FINGER_INDICES = {
-    "thumb":  {"cmc": 1,  "mcp": 2,  "ip": 3,   "tip": 4},
+    "thumb":  {"cmc": 1,  "mcp": 2,  "ip": 3,  "tip": 4},
     "index":  {"mcp": 5,  "pip": 6,  "dip": 7,  "tip": 8},
     "middle": {"mcp": 9,  "pip": 10, "dip": 11, "tip": 12},
     "ring":   {"mcp": 13, "pip": 14, "dip": 15, "tip": 16},
     "pinky":  {"mcp": 17, "pip": 18, "dip": 19, "tip": 20},
 }
 
-FINGER_MCPS = [5, 9, 13, 17]   
-FINGER_TIPS = [8, 12, 16, 20]   
+FINGER_MCPS = [5, 9, 13, 17]
+FINGER_TIPS = [8, 12, 16, 20]
 THUMB_TIP = 4
 
 HAND_LANDMARKER_URL = (
     "https://storage.googleapis.com/mediapipe-models/hand_landmarker/"
     "hand_landmarker/float16/1/hand_landmarker.task"
 )
-
 
 
 def normalize_landmarks(landmarks_flat: np.ndarray) -> np.ndarray:
@@ -107,17 +106,17 @@ def build_feature_vector(landmarks_flat: np.ndarray) -> np.ndarray:
 
 @dataclass
 class LandmarkResult:
-    """Result of running the extractor on one image."""
     found: bool
-    raw_landmarks: Optional[np.ndarray]  
-    normalized: Optional[np.ndarray]      
+    raw_landmarks: Optional[np.ndarray]
+    normalized: Optional[np.ndarray]
+    hand_count: int = 0
 
 
 class HandLandmarkExtractor:
     def __init__(
         self,
         model_path: str = "models/hand_landmarker.task",
-        num_hands: int = 1,
+        num_hands: int = 2,
         min_detection_confidence: float = 0.5,
         min_presence_confidence: float = 0.5,
         min_tracking_confidence: float = 0.5,
@@ -150,17 +149,19 @@ class HandLandmarkExtractor:
         if rgb_image.dtype != np.uint8:
             rgb_image = rgb_image.astype(np.uint8)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_image)
-        result = self._detector.detect(mp_image)
+        detection = self._detector.detect(mp_image)
 
-        if not result.hand_landmarks:
-            return LandmarkResult(found=False, raw_landmarks=None, normalized=None)
+        if not detection.hand_landmarks:
+            return LandmarkResult(found=False, raw_landmarks=None, normalized=None, hand_count=0)
 
-        hand = result.hand_landmarks[0]  
+        hand_count = len(detection.hand_landmarks)
+        hand = detection.hand_landmarks[0]
         raw = np.array([[lm.x, lm.y, lm.z] for lm in hand], dtype=np.float32).flatten()
         return LandmarkResult(
             found=True,
             raw_landmarks=raw,
             normalized=build_feature_vector(raw),
+            hand_count=hand_count,
         )
 
     def close(self) -> None:

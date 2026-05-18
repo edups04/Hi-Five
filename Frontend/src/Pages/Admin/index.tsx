@@ -7,6 +7,7 @@ import Overview from "./Overview";
 import UserManagement from "./UserManagement";
 import UserDetail from "./UserDetail";
 import SystemLogs from "./SystemLogs";
+import AdminSettings from "./AdminSettings";
 
 interface SidebarProps {
   active: string;
@@ -95,10 +96,12 @@ export default function AdminApp() {
   }, [token, navigate]);
 
   function handleLogout() {
-    sessionStorage.removeItem("adminToken");
-    sessionStorage.removeItem("adminUsername");
-    sessionStorage.removeItem("adminPage");
-    navigate('/auth');
+      sessionStorage.removeItem("adminToken");
+      sessionStorage.removeItem("adminUsername");
+      sessionStorage.removeItem("adminPage");
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("user");
+      navigate('/auth');
   }
 
   function handleNav(p: string) {
@@ -142,11 +145,8 @@ export default function AdminApp() {
           ) : page === "logs" ? (
             <SystemLogs token={token} />
           ) : page === "settings" ? (
-            <div style={{ padding: "28px 32px" }}>
-              <h1 style={{ fontSize: 26, fontWeight: 800, color: "#C2410C", margin: "0 0 4px", letterSpacing: "-0.01em", fontFamily: "'Manrope', sans-serif" }}>Settings</h1>
-              <p style={{ fontSize: 13, color: "#9B7355" }}>Settings panel — coming soon.</p>
-            </div>
-          ) : null}
+          <AdminSettings token={token} />
+                ) : null}
         </div>
       </div>
     </div>

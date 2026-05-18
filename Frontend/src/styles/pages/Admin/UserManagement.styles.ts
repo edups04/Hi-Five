@@ -80,13 +80,6 @@ export const userManagementStyles: Record<string, CSSProperties> = {
     fontSize: "12px", fontWeight: 700, cursor: "pointer",
     fontFamily: "'Manrope', sans-serif", transition: "background 0.15s ease",
   },
-  reactivateBtn: {
-    padding: "5px 12px", borderRadius: "8px", border: "1.5px solid #065F46",
-    background: "#D1FAE5", color: "#065F46",
-    fontSize: "12px", fontWeight: 700, cursor: "pointer",
-    transition: "background 0.15s ease",
-    fontFamily: "'Manrope', sans-serif",
-  },
   unlockBtn: {
     padding: "5px 12px", borderRadius: "8px", border: "1.5px solid #D97706",
     background: "#F59E0B", color: "#fff",

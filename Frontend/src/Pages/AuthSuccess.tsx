@@ -35,13 +35,16 @@ const AuthSuccess = () => {
                     const res = await axios.post(`${API_URL}/auth/exchange-code`, { code });
                     if (res.data.success) {
                         accessToken = res.data.token;
+                        if (res.data.role === 'admin') {
+                            localStorage.setItem("accessToken", accessToken!);
+                            sessionStorage.setItem('adminToken', accessToken!);
+                            navigate('/admin');
+                            return;
+                        }
                     } else {
                         navigate("/auth");
                         return;
                     }
-                } else {
-                    navigate("/auth");
-                    return;
                 }
 
                 if (accessToken) {
@@ -52,7 +55,8 @@ const AuthSuccess = () => {
                     if (res.data.success) {
                         setUser(res.data.user);
                         localStorage.setItem("user", JSON.stringify(res.data.user));
-                        navigate("/home");
+                        const userRole = res.data.user?.role;
+                        navigate(userRole === 'admin' ? '/admin' : '/home');
                     } else {
                         navigate("/auth");
                     }

@@ -23,7 +23,7 @@ export const settingsStyles: Record<string, CSSProperties> = {
 	brandSub: { fontSize: "9px", color: "#C2410C", fontWeight: 700, letterSpacing: "0.1em", marginTop: "1px" },
 	mobileTopRow: { display: "block" },
 	mobileMenuBtn: { display: "none" },
-	nav: { display: "flex", flexDirection: "column", gap: "7px" },
+	nav: { display: "flex", flexDirection: "column", gap: "4px" },
 	navItem: {
 		display: "flex",
 		alignItems: "center",

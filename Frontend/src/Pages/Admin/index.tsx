@@ -95,6 +95,15 @@ export default function AdminApp() {
     }
   }, [token, navigate]);
 
+useEffect(() => {
+    window.history.pushState(null, '', window.location.href);
+    const handlePopState = (e: PopStateEvent) => {
+        window.history.pushState(null, '', '/admin');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+}, []);
+
   function handleLogout() {
       sessionStorage.removeItem("adminToken");
       sessionStorage.removeItem("adminUsername");

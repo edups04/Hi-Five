@@ -8,6 +8,8 @@ const multer = require('multer');
 const mongoose = require('mongoose');
 
 const Recording = require('../models/recording');
+const Comment = require('../models/Comment');
+const UsersModel = require('../models/users');
 const { isAuthenticated } = require('../middleware/isAuthenticated');
 const { writeLog } = require('../middleware/auditLogger');
 
@@ -72,6 +74,32 @@ async function convertToMp4(inputPath, outputPath) {
         '-y',
         outputPath,
     ]);
+}
+
+function serializeRecording(r) {
+    return {
+        id: String(r._id),
+        name: r.name,
+        sentence: r.sentence || '',
+        sizeBytes: r.sizeBytes,
+        durationMs: r.durationMs,
+        mimeType: r.mimeType,
+        isPublic: r.isPublic || false,
+        views: r.views || 0,
+        likes: (r.likes || []).map(String),
+        description: r.description || '',
+        tags: r.tags || [],
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+    };
+}
+
+async function findOwned(id, userId) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
+    const recording = await Recording.findById(id);
+    if (!recording) return null;
+    if (String(recording.userId) !== String(userId)) return null;
+    return recording;
 }
 
 router.post(
@@ -167,6 +195,45 @@ router.get('/', isAuthenticated, async (req, res) => {
     }
 });
 
+router.get('/feed', isAuthenticated, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 12;
+        const skip = (page - 1) * limit;
+
+        const recordings = await Recording.find({ isPublic: true })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        const total = await Recording.countDocuments({ isPublic: true });
+
+        const userIds = [...new Set(recordings.map(r => String(r.userId)))];
+        const users = await UsersModel.find({ _id: { $in: userIds } }).select('username avatar picture email').lean();
+        const userMap = {};
+        users.forEach(u => { userMap[String(u._id)] = u; });
+
+        const serialized = recordings.map(r => {
+            const uploader = userMap[String(r.userId)] || {};
+            return {
+                ...serializeRecording(r),
+                userId: String(r.userId),
+                uploader: {
+                    id: String(r.userId),
+                    username: uploader.username || uploader.email?.split('@')[0] || 'Unknown',
+                    avatar: uploader.avatar || uploader.picture || null,
+                },
+            };
+        });
+
+        return res.json({ success: true, recordings: serialized, total, page, totalPages: Math.ceil(total / limit) });
+    } catch (error) {
+        console.error('[recordings] GET feed failed:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Server error' });
+    }
+});
+
 router.get('/:id/video', (req, res, next) => {
     if (req.query.token) {
         req.headers.authorization = `Bearer ${req.query.token}`;
@@ -174,9 +241,12 @@ router.get('/:id/video', (req, res, next) => {
     next();
 }, isAuthenticated, async (req, res) => {
     try {
-        const recording = await findOwned(req.params.id, req.userId);
-        if (!recording) {
-            return res.status(404).json({ success: false, message: 'Not found' });
+        const recording = await Recording.findById(req.params.id);
+        if (!recording) return res.status(404).json({ success: false, message: 'Not found' });
+
+        const isOwner = String(recording.userId) === String(req.userId);
+        if (!isOwner && !recording.isPublic) {
+            return res.status(403).json({ success: false, message: 'Forbidden' });
         }
 
         const filePath = recordingFilePath(recording.userId, recording._id);
@@ -227,6 +297,228 @@ router.get('/:id/video', (req, res, next) => {
     }
 });
 
+router.get('/:id', isAuthenticated, async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(404).json({ success: false, message: 'Not found' });
+        }
+        const recording = await Recording.findById(req.params.id).lean();
+        if (!recording) return res.status(404).json({ success: false, message: 'Not found' });
+
+        const isOwner = String(recording.userId) === String(req.userId);
+        if (!isOwner && !recording.isPublic) {
+            return res.status(403).json({ success: false, message: 'Forbidden' });
+        }
+
+        const uploader = await UsersModel.findById(recording.userId).select('username avatar picture email').lean();
+
+        return res.json({
+            success: true,
+            recording: {
+                ...serializeRecording(recording),
+                userId: String(recording.userId),
+                uploader: {
+                    id: String(recording.userId),
+                    username: uploader?.username || uploader?.email?.split('@')[0] || 'Unknown',
+                    avatar: uploader?.avatar || uploader?.picture || null,
+                },
+            },
+        });
+    } catch (error) {
+        console.error('[recordings] GET single failed:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Server error' });
+    }
+});
+
+router.post('/:id/publish', isAuthenticated, async (req, res) => {
+    try {
+        const recording = await findOwned(req.params.id, req.userId);
+        if (!recording) return res.status(404).json({ success: false, message: 'Not found' });
+
+        const description = (req.body.description || '').slice(0, 2000);
+        const tags = (req.body.tags || []).slice(0, 10).map(t => String(t).slice(0, 50));
+
+        recording.isPublic = true;
+        recording.description = description;
+        recording.tags = tags;
+        await recording.save();
+
+        await writeLog({
+            actor: req.user?.email || String(req.userId),
+            actorId: req.userId,
+            type: 'User Action',
+            severity: 'INFO',
+            action: 'recording.published',
+            description: `User published recording "${recording.name}"`,
+            ip: req.ip,
+        });
+
+        return res.json({ success: true, recording: serializeRecording(recording) });
+    } catch (error) {
+        console.error('[recordings] publish failed:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Server error' });
+    }
+});
+
+router.post('/:id/unpublish', isAuthenticated, async (req, res) => {
+    try {
+        const recording = await findOwned(req.params.id, req.userId);
+        if (!recording) return res.status(404).json({ success: false, message: 'Not found' });
+
+        recording.isPublic = false;
+        await recording.save();
+
+        return res.json({ success: true, recording: serializeRecording(recording) });
+    } catch (error) {
+        console.error('[recordings] unpublish failed:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Server error' });
+    }
+});
+
+router.post('/:id/like', isAuthenticated, async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(404).json({ success: false, message: 'Not found' });
+        }
+        const recording = await Recording.findById(req.params.id);
+        if (!recording || !recording.isPublic) {
+            return res.status(404).json({ success: false, message: 'Not found' });
+        }
+
+        const userId = req.userId;
+        const alreadyLiked = recording.likes.some(id => String(id) === String(userId));
+
+        if (alreadyLiked) {
+            recording.likes = recording.likes.filter(id => String(id) !== String(userId));
+        } else {
+            recording.likes.push(userId);
+        }
+        await recording.save();
+
+        return res.json({ success: true, likes: recording.likes.length, liked: !alreadyLiked });
+    } catch (error) {
+        console.error('[recordings] like failed:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Server error' });
+    }
+});
+
+router.post('/:id/view', isAuthenticated, async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(404).json({ success: false, message: 'Not found' });
+        }
+        await Recording.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } });
+        return res.json({ success: true });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: error.message || 'Server error' });
+    }
+});
+
+router.get('/:id/comments', isAuthenticated, async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(404).json({ success: false, message: 'Not found' });
+        }
+
+        const comments = await Comment.find({ recordingId: req.params.id })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        const userIds = [...new Set(comments.map(c => String(c.userId)))];
+        const users = await UsersModel.find({ _id: { $in: userIds } }).select('username avatar picture email').lean();
+        const userMap = {};
+        users.forEach(u => { userMap[String(u._id)] = u; });
+
+        const serialized = comments.map(c => {
+            const user = userMap[String(c.userId)] || {};
+            return {
+                id: String(c._id),
+                text: c.text,
+                likes: (c.likes || []).map(String),
+                createdAt: c.createdAt,
+                user: {
+                    id: String(c.userId),
+                    username: user.username || user.email?.split('@')[0] || 'Unknown',
+                    avatar: user.avatar || user.picture || null,
+                },
+            };
+        });
+
+        return res.json({ success: true, comments: serialized });
+    } catch (error) {
+        console.error('[recordings] GET comments failed:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Server error' });
+    }
+});
+
+router.post('/:id/comments', isAuthenticated, async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(404).json({ success: false, message: 'Not found' });
+        }
+        const text = (req.body.text || '').trim();
+        if (!text) return res.status(400).json({ success: false, message: 'Comment text is required' });
+        if (text.length > 1000) return res.status(400).json({ success: false, message: 'Comment too long' });
+
+        const recording = await Recording.findById(req.params.id);
+        if (!recording || !recording.isPublic) {
+            return res.status(404).json({ success: false, message: 'Not found' });
+        }
+
+        const comment = await Comment.create({
+            recordingId: req.params.id,
+            userId: req.userId,
+            text,
+        });
+
+        const user = await UsersModel.findById(req.userId).select('username avatar picture email').lean();
+
+        return res.status(201).json({
+            success: true,
+            comment: {
+                id: String(comment._id),
+                text: comment.text,
+                likes: [],
+                createdAt: comment.createdAt,
+                user: {
+                    id: String(req.userId),
+                    username: user?.username || user?.email?.split('@')[0] || 'Unknown',
+                    avatar: user?.avatar || user?.picture || null,
+                },
+            },
+        });
+    } catch (error) {
+        console.error('[recordings] POST comment failed:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Server error' });
+    }
+});
+
+router.post('/:id/comments/:commentId/like', isAuthenticated, async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.commentId)) {
+            return res.status(404).json({ success: false, message: 'Not found' });
+        }
+
+        const comment = await Comment.findById(req.params.commentId);
+        if (!comment) return res.status(404).json({ success: false, message: 'Not found' });
+
+        const userId = req.userId;
+        const alreadyLiked = comment.likes.some(id => String(id) === String(userId));
+
+        if (alreadyLiked) {
+            comment.likes = comment.likes.filter(id => String(id) !== String(userId));
+        } else {
+            comment.likes.push(userId);
+        }
+        await comment.save();
+
+        return res.json({ success: true, likes: comment.likes.length, liked: !alreadyLiked });
+    } catch (error) {
+        console.error('[recordings] comment like failed:', error);
+        return res.status(500).json({ success: false, message: error.message || 'Server error' });
+    }
+});
+
 router.patch('/:id', isAuthenticated, async (req, res) => {
     try {
         const name = (req.body.name || '').trim();
@@ -256,7 +548,9 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
         const filePath = recordingFilePath(recording.userId, recording._id);
         const recordingName = recording.name;
 
+        await Comment.deleteMany({ recordingId: recording._id });
         await Recording.deleteOne({ _id: recording._id });
+
         fsp.unlink(filePath).catch((err) => {
             if (err.code !== 'ENOENT') {
                 console.warn(`[recordings] failed to unlink ${filePath}:`, err);
@@ -280,26 +574,5 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
         return res.status(500).json({ success: false, message: error.message || 'Server error' });
     }
 });
-
-async function findOwned(id, userId) {
-    if (!mongoose.Types.ObjectId.isValid(id)) return null;
-    const recording = await Recording.findById(id);
-    if (!recording) return null;
-    if (String(recording.userId) !== String(userId)) return null;
-    return recording;
-}
-
-function serializeRecording(r) {
-    return {
-        id: String(r._id),
-        name: r.name,
-        sentence: r.sentence || '',
-        sizeBytes: r.sizeBytes,
-        durationMs: r.durationMs,
-        mimeType: r.mimeType,
-        createdAt: r.createdAt,
-        updatedAt: r.updatedAt,
-    };
-}
 
 module.exports = router;

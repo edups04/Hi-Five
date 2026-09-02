@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from "../assets/Hi-five.png";
 import { homeCss as css, homeStyles as s } from "../styles/pages/Home.styles";
-import { ListVideo, LogOut, Menu, PlusCircle, Settings, Sparkles, Square, Video, X, Eraser, Maximize2, Minimize2 } from "lucide-react";
+import { Home as HomeIcon, ListVideo, LogOut, Menu, PlusCircle, Settings, Sparkles, Square, Video, X, Eraser, Maximize2, Minimize2 } from "lucide-react";
 import { getData } from '../context/userContext';
 import { useFrameCapture } from '../hooks/useFrameCapture';
 import { useVideoRecorder } from '../hooks/useVideoRecorder';
@@ -12,7 +12,7 @@ import { useToast } from '../components/Toast';
 import ASLOverlay from "../components/AslOverlay";
 import { type SignMode } from '../lib/aslClient';
 
-type NavItem = 'record' | 'library' | 'settings';
+type NavItem = 'home' | 'record' | 'library' | 'settings';
 
 function Home() {
   const navigate = useNavigate();
@@ -28,6 +28,8 @@ function Home() {
   const [pendingDurationSec, setPendingDurationSec] = useState(0);
   const [pendingSentence, setPendingSentence] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  
   const [signMode, setSignMode] = useState<SignMode>('both');
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -44,7 +46,7 @@ function Home() {
     clearSentence,
     backspace,
     appendSpace,
-  } = useFrameCapture(videoRef, isRecording, { fps: 5, mode: signMode });
+  } = useFrameCapture(videoRef, isRecording, { fps: 10, mode: signMode });
 
   const recorder = useVideoRecorder();
 
@@ -62,7 +64,7 @@ function Home() {
   }
 
   const currentUser = (user && typeof user === 'object' ? user : null) || (userObj && typeof userObj === 'object' ? userObj : null);
-  const picture = currentUser?.picture || currentUser?.profileObj?.imageUrl || null;
+  const picture = currentUser?.avatar || currentUser?.picture || currentUser?.profileObj?.imageUrl || null;
   const userName =
     currentUser?.username ||
     currentUser?.name ||
@@ -168,25 +170,28 @@ function Home() {
   async function handleKeep(name: string) {
     if (!pendingBlob || isSaving) return;
     setIsSaving(true);
+    setUploadProgress(0);
     try {
-      const meta = await uploadRecording({
-        blob: pendingBlob,
-        name,
-        sentence: pendingSentence,
-        durationMs: pendingDurationSec * 1000,
-      });
-      toast.success(`Saved "${meta.name}"`);
-      setPendingBlob(null);
-      setPendingDurationSec(0);
-      setPendingSentence('');
-      clearSentence();
+        const meta = await uploadRecording(
+            pendingBlob,
+            name,
+            pendingSentence,
+            pendingDurationSec * 1000,
+            (percent) => setUploadProgress(percent),
+        );
+        toast.success(`Saved "${meta.name}"`);
+        setPendingBlob(null);
+        setPendingDurationSec(0);
+        setPendingSentence('');
+        clearSentence();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Save failed';
-      toast.error(`Save failed: ${msg}`);
+        const msg = err instanceof Error ? err.message : 'Save failed';
+        toast.error(`Save failed: ${msg}`);
     } finally {
-      setIsSaving(false);
+        setIsSaving(false);
+        setUploadProgress(0);
     }
-  }
+}
 
   function handleDiscard() {
     if (isSaving) return;
@@ -195,6 +200,8 @@ function Home() {
     setPendingSentence('');
     clearSentence();
   }
+
+  
 
   function formatTime(s: number) {
     const h = String(Math.floor(s / 3600)).padStart(2, '0');
@@ -210,16 +217,18 @@ function Home() {
   }
 
   function handleNavSelect(item: NavItem) {
-    if (item === 'library') { navigate('/library'); setMobileMenuOpen(false); return; }
-    if (item === 'settings') { navigate('/settings'); setMobileMenuOpen(false); return; }
-    setActiveNav(item);
-    setMobileMenuOpen(false);
+      if (item === 'home') { navigate('/feed'); setMobileMenuOpen(false); return; }
+      if (item === 'library') { navigate('/library'); setMobileMenuOpen(false); return; }
+      if (item === 'settings') { navigate('/settings'); setMobileMenuOpen(false); return; }
+      setActiveNav(item);
+      setMobileMenuOpen(false);
   }
 
   const navItems = [
-    { id: 'record' as NavItem, label: 'Record', icon: <Video size={18} strokeWidth={1.8} /> },
-    { id: 'library' as NavItem, label: 'Library', icon: <ListVideo size={18} strokeWidth={1.8} /> },
-    { id: 'settings' as NavItem, label: 'Settings', icon: <Settings size={18} strokeWidth={1.8} /> },
+      { id: 'home' as NavItem, label: 'Home', icon: <HomeIcon size={18} strokeWidth={1.8} /> },
+      { id: 'record' as NavItem, label: 'Record', icon: <Video size={18} strokeWidth={1.8} /> },
+      { id: 'library' as NavItem, label: 'Library', icon: <ListVideo size={18} strokeWidth={1.8} /> },
+      { id: 'settings' as NavItem, label: 'Settings', icon: <Settings size={18} strokeWidth={1.8} /> },
   ];
 
   const modeOptions: { value: SignMode; label: string }[] = [
@@ -243,7 +252,7 @@ function Home() {
                 <img src={logo} alt="Hi-Five logo" style={{ width: "60px", height: "90px" }} />
                 <div>
                   <div style={s.brandName}>Hi-Five</div>
-                  <div style={s.brandSub}>ASL MADE VISIBLE</div>
+                  <div style={s.brandSub}>SIGNING MADE VISIBLE</div>
                 </div>
               </div>
             </div>
@@ -364,14 +373,13 @@ function Home() {
 
               {isRecording && showDebug && lastPrediction && (
                 <div style={s.debugOverlay} className="asl-debug-overlay">
-                  <div>
                     <span style={lastPrediction.hand_detected ? s.debugLabelGood : s.debugLabelNone}>
-                      {lastPrediction.label}
+                        {lastPrediction.label}
                     </span>
-                    {' '}
-                    {(lastPrediction.confidence * 100).toFixed(0)}%
-                  </div>
-                  <div style={s.debugFps}>{predictFps.toFixed(1)} fps</div>
+                    <span style={lastPrediction.hand_detected ? s.debugConfGood : s.debugConfNone}>
+                        {(lastPrediction.confidence * 100).toFixed(0)}%
+                    </span>
+                    <div style={s.debugFps}>{predictFps.toFixed(1)} fps</div>
                 </div>
               )}
 
@@ -411,7 +419,7 @@ function Home() {
         )}
       </main>
 
-      <RecordingPreviewModal blob={pendingBlob} onKeep={handleKeep} onDiscard={handleDiscard} isSaving={isSaving} />
+      <RecordingPreviewModal blob={pendingBlob} onKeep={handleKeep} onDiscard={handleDiscard} isSaving={isSaving} uploadProgress={uploadProgress} />
     </div>
   );
 }

@@ -10,10 +10,11 @@ export interface RecordingPreviewModalProps {
   onKeep: (name: string) => void;
   onDiscard: () => void;
   isSaving?: boolean;
+  uploadProgress?: number;
 }
 
 export function RecordingPreviewModal(props: RecordingPreviewModalProps) {
-  const { blob, onKeep, onDiscard, isSaving = false } = props;
+  const { blob, onKeep, onDiscard, isSaving = false, uploadProgress = 0 } = props;
   const [name, setName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -48,6 +49,8 @@ export function RecordingPreviewModal(props: RecordingPreviewModalProps) {
       handleKeep();
     }
   }
+
+  const progress = Math.min(100, Math.max(0, uploadProgress));
 
   return (
     <div style={s.backdrop} role="dialog" aria-modal="true" aria-labelledby="asl-modal-title">
@@ -95,6 +98,28 @@ export function RecordingPreviewModal(props: RecordingPreviewModalProps) {
           />
         </div>
 
+        {isSaving && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#9B7355', fontFamily: "'Manrope', sans-serif", letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                Uploading...
+              </span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: '#C2410C', fontFamily: "'Manrope', sans-serif" }}>
+                {progress}%
+              </span>
+            </div>
+            <div style={{ width: '100%', height: 8, background: '#F0D9C8', borderRadius: 50, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%',
+                width: `${progress}%`,
+                background: 'linear-gradient(90deg, #F97316, #C2410C)',
+                borderRadius: 50,
+                transition: 'width 0.2s ease',
+              }} />
+            </div>
+          </div>
+        )}
+
         <div style={s.actions} className="asl-modal-actions">
           <button
             type="button"
@@ -125,7 +150,7 @@ export function RecordingPreviewModal(props: RecordingPreviewModalProps) {
             ) : (
               <Save size={16} strokeWidth={1.8} />
             )}
-            {isSaving ? "Saving..." : "Keep"}
+            {isSaving ? `Saving... ${progress}%` : "Keep"}
           </button>
         </div>
       </div>

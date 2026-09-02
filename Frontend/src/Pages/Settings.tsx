@@ -1,12 +1,14 @@
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Eye, EyeOff, ListVideo, Lock, LogOut, Menu, Pencil, Phone, PlusCircle, Settings as SettingsIcon, Video, X } from 'lucide-react';
+import { Camera, Eye, EyeOff, Home as HomeIcon, ListVideo, Lock, LogOut, Menu, Pencil, Phone, PlusCircle, Settings as SettingsIcon, Video, X } from 'lucide-react';
 import logo from '../assets/Hi-five.png';
 import { getData } from '../context/userContext';
 import { settingsCss as css, settingsStyles as s } from '../styles/pages/Settings.styles';
 import { clearTrustedDevice } from './LoginSignup';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+type NavItem = 'home' | 'record' | 'library' | 'settings';
 
 interface UserProfile {
 	username?: string;
@@ -238,9 +240,10 @@ function SettingsPage() {
 	}
 
 	const navItems = [
-		{ label: 'Record', icon: <Video size={18} strokeWidth={1.8} />, path: '/home', active: false },
-		{ label: 'Library', icon: <ListVideo size={18} strokeWidth={1.8} />, path: '/library', active: false },
-		{ label: 'Settings', icon: <SettingsIcon size={18} strokeWidth={1.8} />, path: '/settings', active: true },
+		{ id: 'home' as NavItem, label: 'Home', icon: <HomeIcon size={18} strokeWidth={1.8} />, path: '/feed', active: false },
+		{ id: 'record' as NavItem, label: 'Recording', icon: <Video size={18} strokeWidth={1.8} />, path: '/recording', active: false },
+		{ id: 'library' as NavItem, label: 'Library', icon: <ListVideo size={18} strokeWidth={1.8} />, path: '/library', active: false },
+		{ id: 'settings' as NavItem, label: 'Settings', icon: <SettingsIcon size={18} strokeWidth={1.8} />, path: '/settings', active: true },
 	];
 
 	return (
@@ -260,7 +263,7 @@ function SettingsPage() {
 								<img src={logo} alt="Hi-Five logo" style={{ width: '60px', height: '90px' }} />
 								<div>
 									<div style={s.brandName}>Hi-Five</div>
-									<div style={s.brandSub}>ASL MADE VISIBLE</div>
+									<div style={s.brandSub}>SIGNING MADE VISIBLE</div>
 								</div>
 							</div>
 						</div>

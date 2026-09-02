@@ -1,190 +1,637 @@
 import type { CSSProperties } from "react";
 
-export const landingStyles: Record<string, CSSProperties> = {
-  root: {
-    minHeight: "100vh",
-    background: "#FAF0E8",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    fontFamily: "'Manrope', sans-serif",
-    padding: "20px",
-  },
-  card: {
-    width: "100%",
-    maxWidth: "1060px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  hero: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "0",
-    transition: "opacity 0.7s ease, transform 0.7s ease",
-    width: "100%",
-  },
-  logoWrap: {
-    marginBottom: "12px",
-    filter: "drop-shadow(0 4px 16px rgba(249,115,22,0.25))",
-  },
-  heading: {
-    fontSize: "52px",
-    fontWeight: 800,
-    color: "#3B1A00",
-    margin: "0 0 4px",
-    letterSpacing: "-0.02em",
-    fontFamily: "'Manrope', sans-serif",
-  },
-  tagline: {
-    fontSize: "16px",
-    color: "#8B5C2A",
-    margin: "0 0 28px",
-    fontWeight: 400,
-    letterSpacing: "0.01em",
-  },
-  body: {
-    fontSize: "20px",
-    color: "#3B1A00",
-    textAlign: "center",
-    maxWidth: "480px",
-    lineHeight: 1.55,
-    margin: "0 0 36px",
-    fontWeight: 400,
-  },
-  cta: {
-    background: "#F97316",
-    color: "#fff",
-    border: "none",
-    borderRadius: "50px",
-    padding: "18px 52px",
-    fontSize: "18px",
-    fontWeight: 700,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    letterSpacing: "0.01em",
-    marginBottom: "48px",
-    boxShadow: "0 4px 24px rgba(249,115,22,0.35)",
-    transition: "transform 0.15s ease, box-shadow 0.15s ease",
-    fontFamily: "'Manrope', sans-serif",
-  },
-  ctaPlay: {
-    fontSize: "15px",
-    opacity: 0.9,
-  },
-  features: {
-    display: "flex",
-    justifyContent: "space-around",
-    gap: "70px",
-    background: "#F5D9C8",
-    borderRadius: "20px",
-    padding: "40px 45px",
-    width: "100%",
-    maxWidth: "1000px",
-    transition: "opacity 0.7s ease, transform 0.7s ease",
-  },
-  featureCard: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "10px",
-    flex: 1,
-    transition: "transform 0.2s ease",
-    cursor: "default",
-  },
-  featureIcon: {
-    width: "44px",
-    height: "44px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  featureTitle: {
-    fontSize: "18px",
-    fontWeight: 700,
-    color: "#3B1A00",
-    margin: 0,
-    letterSpacing: "0.01em",
-    fontFamily: "'Manrope', sans-serif",
-  },
-  featureDesc: {
-    fontSize: "15px",
-    color: "#7A4520",
-    textAlign: "center",
-    margin: 0,
-    lineHeight: 1.5,
-    maxWidth: "140px",
-  },
-};
-
 export const landingCss = `
-  .fade-in {
-    transition: opacity 0.7s ease, transform 0.7s ease;
-  }
-  .cta-btn:hover {
-    transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 8px 32px rgba(249,115,22,0.45) !important;
-  }
-  .cta-btn:active {
-    transform: translateY(0) scale(0.98);
-  }
-  .feature-card:hover {
-    transform: translateY(-4px);
-  }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
 
-  @media (max-width: 900px) {
-    .landing-card {
-      max-width: 760px !important;
-    }
-    .features-grid {
-      gap: 20px !important;
-      padding: 26px 20px !important;
-    }
-  }
+    .section-hidden { opacity: 0; transform: translateY(32px); transition: opacity 0.6s ease, transform 0.6s ease; }
+    .section-visible { opacity: 1; transform: translateY(0); transition: opacity 0.6s ease, transform 0.6s ease; }
 
-  @media (max-width: 600px) {
-    .landing-root {
-      padding: 14px !important;
-      justify-content: flex-start !important;
+    .nav-link:hover { color: #C2410C !important; }
+    .try-btn:hover { background: #7C3410 !important; }
+    .hero-cta:hover { background: #7C3410 !important; transform: translateY(-1px); transition: all 0.15s ease; }
+    .hero-secondary:hover { background: rgba(240,217,200,0.4) !important; transition: all 0.15s ease; }
+    .feature-card:hover { box-shadow: 0 8px 28px rgba(64,34,12,0.12) !important; transform: translateY(-3px); transition: all 0.2s ease; }
+    .footer-link:hover { color: #C2410C !important; }
+
+    @media (max-width: 768px) {
+        .nav-links { display: none !important; }
+        .mobile-menu-btn { display: block !important; }
+        .features-grid { grid-template-columns: 1fr !important; }
+        .footer-grid { grid-template-columns: 1fr 1fr !important; }
+        .stats-video-placeholder { width: 100% !important; }
     }
-    .landing-card {
-      gap: 12px !important;
+    @media (max-width: 480px) {
+        .footer-grid { grid-template-columns: 1fr !important; }
     }
-    .landing-card h1 {
-      font-size: 38px !important;
-      text-align: center !important;
-    }
-    .landing-card p {
-      text-align: center !important;
-    }
-    .landing-card button {
-      width: 100% !important;
-      justify-content: center !important;
-      padding: 14px 24px !important;
-      font-size: 16px !important;
-      margin-bottom: 28px !important;
-    }
-    .features-grid {
-      flex-direction: column !important;
-      gap: 18px !important;
-      border-radius: 16px !important;
-      padding: 18px 14px !important;
-    }
-    .features-grid .feature-card {
-      padding: 2px 8px !important;
-    }
-    .features-grid .feature-title,
-    .features-grid h3 {
-      font-size: 17px !important;
-    }
-    .features-grid .feature-desc,
-    .features-grid p {
-      max-width: 100% !important;
-      font-size: 14px !important;
-    }
-  }
 `;
+
+export const landingStyles: Record<string, CSSProperties> = {
+    root: {
+        background: '#FAF0E8',
+        fontFamily: "'Manrope', sans-serif",
+        overflowX: 'hidden',
+    },
+    navbar: {
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        background: 'rgba(250,240,232,0.92)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #F0D9C8',
+        padding: '0 40px',
+        display: 'flex',
+        alignItems: 'center',
+        height: 64,
+    },
+    navBrand: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        marginRight: 'auto',
+    },
+    navBrandName: {
+        fontSize: 18,
+        fontWeight: 800,
+        color: '#3B1A00',
+        letterSpacing: '-0.01em',
+    },
+    navLinks: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 32,
+    },
+    navLink: {
+        background: 'none',
+        border: 'none',
+        fontSize: 14,
+        fontWeight: 600,
+        color: '#7A4520',
+        cursor: 'pointer',
+        fontFamily: "'Manrope', sans-serif",
+    },
+    navTryBtn: {
+        padding: '9px 22px',
+        borderRadius: 50,
+        border: 'none',
+        background: '#92400E',
+        color: '#fff',
+        fontWeight: 700,
+        fontSize: 14,
+        cursor: 'pointer',
+        fontFamily: "'Manrope', sans-serif",
+    },
+    navAvatar: {
+        width: 36,
+        height: 36,
+        borderRadius: '50%',
+        border: '1.5px solid #F0D9C8',
+        background: '#fff',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        fontSize: 14,
+        fontWeight: 700,
+        color: '#9B7355',
+    },
+    mobileMenuBtn: {
+        display: 'none',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: 22,
+        color: '#92400E',
+    },
+    mobileMenu: {
+        position: 'fixed',
+        top: 64,
+        left: 0,
+        right: 0,
+        background: '#FAF0E8',
+        borderBottom: '1px solid #F0D9C8',
+        padding: '16px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 12,
+        zIndex: 49,
+    },
+    mobileNavLink: {
+        background: 'none',
+        border: 'none',
+        fontSize: 15,
+        fontWeight: 600,
+        color: '#7A4520',
+        cursor: 'pointer',
+        textAlign: 'left',
+        fontFamily: "'Manrope', sans-serif",
+    },
+    mobileNavBtn: {
+        padding: '10px 0',
+        borderRadius: 50,
+        border: 'none',
+        background: '#92400E',
+        color: '#fff',
+        fontWeight: 700,
+        fontSize: 14,
+        cursor: 'pointer',
+        fontFamily: "'Manrope', sans-serif",
+    },
+    hero: {
+        padding: '80px 40px 60px',
+        maxWidth: 700,
+        margin: '0 auto',
+    },
+    heroLogoWrap: {
+        marginBottom: 24,
+    },
+    heroHeading: {
+        margin: '0 0 16px',
+        fontSize: 'clamp(44px, 7vw, 72px)' as any,
+        fontWeight: 800,
+        color: '#3B1A00',
+        lineHeight: 1.08,
+        letterSpacing: '-0.03em',
+    },
+    heroHeadingAccent: {
+        color: '#C2410C',
+    },
+    heroTagline: {
+        margin: '0 0 36px',
+        fontSize: 18,
+        color: '#7A4520',
+        fontWeight: 500,
+        lineHeight: 1.6,
+        maxWidth: 460,
+    },
+    heroButtons: {
+        display: 'flex',
+        gap: 14,
+        flexWrap: 'wrap' as any,
+    },
+    heroCta: {
+        padding: '14px 32px',
+        borderRadius: 50,
+        border: 'none',
+        background: '#92400E',
+        color: '#fff',
+        fontWeight: 700,
+        fontSize: 16,
+        cursor: 'pointer',
+        fontFamily: "'Manrope', sans-serif",
+    },
+    heroSecondary: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '14px 28px',
+        borderRadius: 50,
+        border: '1.5px solid #E7C9B6',
+        background: 'transparent',
+        color: '#7A4520',
+        fontWeight: 700,
+        fontSize: 16,
+        cursor: 'pointer',
+        fontFamily: "'Manrope', sans-serif",
+    },
+    heroPlayIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: '50%',
+        background: '#F0D9C8',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 11,
+    },
+    featuresSection: {
+        background: '#F5E6D8',
+        padding: '72px 40px',
+    },
+    featuresInner: {
+        maxWidth: 1000,
+        margin: '0 auto',
+    },
+    featuresHeader: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 48,
+        flexWrap: 'wrap' as any,
+        gap: 16,
+    },
+    featuresHeading: {
+        margin: '0 0 10px',
+        fontSize: 'clamp(26px, 4vw, 36px)' as any,
+        fontWeight: 800,
+        color: '#3B1A00',
+        letterSpacing: '-0.02em',
+        lineHeight: 1.2,
+    },
+    featuresAccentLine: {
+        width: 40,
+        height: 3,
+        background: '#C2410C',
+        borderRadius: 2,
+    },
+    featuresSubtext: {
+        margin: 0,
+        fontSize: 14,
+        color: '#9B7355',
+        fontWeight: 600,
+        maxWidth: 220,
+        textAlign: 'right' as any,
+    },
+    featuresGrid: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: 20,
+    },
+    featureCard: {
+        background: '#fff',
+        borderRadius: 20,
+        padding: '28px 24px',
+        border: '1px solid #F0D9C8',
+        boxShadow: '0 4px 16px rgba(64,34,12,0.06)',
+    },
+    featureIconWrap: {
+        width: 44,
+        height: 44,
+        borderRadius: 12,
+        background: '#FAF0E8',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    featureTitle: {
+        margin: '0 0 8px',
+        fontSize: 17,
+        fontWeight: 800,
+        color: '#3B1A00',
+    },
+    featureDesc: {
+        margin: 0,
+        fontSize: 13,
+        color: '#9B7355',
+        lineHeight: 1.6,
+    },
+    howSection: {
+        padding: '80px 40px',
+    },
+    howInner: {
+        maxWidth: 640,
+        margin: '0 auto',
+    },
+    howLabel: {
+        margin: '0 0 8px',
+        fontSize: 11,
+        fontWeight: 700,
+        color: '#C2410C',
+        letterSpacing: '0.15em',
+        textTransform: 'uppercase' as any,
+    },
+    howHeading: {
+        margin: '0 0 52px',
+        fontSize: 'clamp(28px, 4vw, 40px)' as any,
+        fontWeight: 800,
+        color: '#3B1A00',
+        letterSpacing: '-0.02em',
+    },
+    howSteps: {
+        display: 'flex',
+        flexDirection: 'column' as any,
+        gap: 0,
+    },
+    howStepWrap: {
+        display: 'flex',
+        gap: 24,
+    },
+    howStepLeft: {
+        display: 'flex',
+        flexDirection: 'column' as any,
+        alignItems: 'center',
+        flexShrink: 0,
+    },
+    howStepNum: {
+        width: 36,
+        height: 36,
+        borderRadius: '50%',
+        background: '#92400E',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: 800,
+    },
+    howStepLine: {
+        width: 2,
+        flex: 1,
+        background: '#F0D9C8',
+        marginTop: 8,
+    },
+    howStepTitle: {
+        margin: '0 0 6px',
+        fontSize: 18,
+        fontWeight: 800,
+        color: '#3B1A00',
+    },
+    howStepDesc: {
+        margin: 0,
+        fontSize: 14,
+        color: '#9B7355',
+        lineHeight: 1.6,
+    },
+    demoSection: {
+        background: '#F5E6D8',
+        padding: '80px 40px',
+    },
+    demoInner: {
+        maxWidth: 700,
+        margin: '0 auto',
+        textAlign: 'center' as any,
+    },
+    demoLabel: {
+        margin: '0 0 8px',
+        fontSize: 11,
+        fontWeight: 700,
+        color: '#C2410C',
+        letterSpacing: '0.15em',
+        textTransform: 'uppercase' as any,
+    },
+    demoHeading: {
+        margin: '0 0 12px',
+        fontSize: 'clamp(28px, 4vw, 40px)' as any,
+        fontWeight: 800,
+        color: '#3B1A00',
+        letterSpacing: '-0.02em',
+    },
+    demoSubtext: {
+        margin: '0 0 40px',
+        fontSize: 15,
+        color: '#9B7355',
+        lineHeight: 1.6,
+    },
+    statsSection: {
+        background: '#6B2D0E',
+        padding: '72px 40px',
+    },
+    statsInner: {
+        maxWidth: 1000,
+        margin: '0 auto',
+        display: 'flex',
+        gap: 40,
+        alignItems: 'center',
+        flexWrap: 'wrap' as any,
+    },
+    statsVideoPlaceholder: {
+        flex: '0 0 auto',
+        width: 280,
+        height: 200,
+        background: 'rgba(0,0,0,0.3)',
+        borderRadius: 16,
+    },
+    statsGrid: {
+        flex: 1,
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 16,
+        minWidth: 260,
+    },
+    statCard: {
+        background: 'rgba(0,0,0,0.25)',
+        borderRadius: 16,
+        padding: '20px 24px',
+    },
+    statValue: {
+        fontSize: 'clamp(24px, 4vw, 36px)' as any,
+        fontWeight: 800,
+        color: '#fff',
+        letterSpacing: '-0.02em',
+    },
+    statLabel: {
+        fontSize: 11,
+        fontWeight: 700,
+        color: 'rgba(255,255,255,0.55)',
+        letterSpacing: '0.1em',
+        marginTop: 4,
+    },
+    ctaSection: {
+        padding: '80px 40px',
+    },
+    ctaInner: {
+        maxWidth: 700,
+        margin: '0 auto',
+    },
+    ctaCard: {
+        background: 'linear-gradient(135deg, #F5E6D8 0%, #FDDCC8 50%, #FAF0E8 100%)',
+        borderRadius: 28,
+        padding: '64px 40px',
+        textAlign: 'center' as any,
+        boxShadow: '0 8px 40px rgba(146,64,14,0.1)',
+    },
+    ctaHeading: {
+        margin: '0 0 12px',
+        fontSize: 'clamp(32px, 5vw, 52px)' as any,
+        fontWeight: 800,
+        color: '#3B1A00',
+        letterSpacing: '-0.03em',
+    },
+    ctaSubtext: {
+        margin: '0 0 36px',
+        fontSize: 15,
+        color: '#9B7355',
+        fontWeight: 600,
+    },
+    ctaButtons: {
+        display: 'flex',
+        gap: 14,
+        justifyContent: 'center',
+        flexWrap: 'wrap' as any,
+    },
+    ctaPrimary: {
+        padding: '14px 32px',
+        borderRadius: 50,
+        border: 'none',
+        background: '#92400E',
+        color: '#fff',
+        fontWeight: 700,
+        fontSize: 15,
+        cursor: 'pointer',
+        fontFamily: "'Manrope', sans-serif",
+    },
+    ctaSecondary: {
+        padding: '14px 32px',
+        borderRadius: 50,
+        border: '1.5px solid #C2410C',
+        background: 'transparent',
+        color: '#C2410C',
+        fontWeight: 700,
+        fontSize: 15,
+        cursor: 'pointer',
+        fontFamily: "'Manrope', sans-serif",
+    },
+    footer: {
+        background: '#FAF0E8',
+        borderTop: '1px solid #F0D9C8',
+        padding: '48px 40px 28px',
+    },
+    footerInner: {
+        maxWidth: 1000,
+        margin: '0 auto',
+    },
+    footerGrid: {
+        display: 'grid',
+        gridTemplateColumns: '2fr 1fr 1fr 1fr',
+        gap: 32,
+        marginBottom: 40,
+    },
+    footerBrand: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 10,
+    },
+    footerBrandName: {
+        fontSize: 16,
+        fontWeight: 800,
+        color: '#3B1A00',
+    },
+    footerTagline: {
+        margin: 0,
+        fontSize: 13,
+        color: '#9B7355',
+        lineHeight: 1.6,
+    },
+    footerColLabel: {
+        margin: '0 0 12px',
+        fontSize: 12,
+        fontWeight: 700,
+        color: '#3B1A00',
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase' as any,
+    },
+    footerLink: {
+        margin: '0 0 8px',
+        fontSize: 13,
+        color: '#9B7355',
+        cursor: 'pointer',
+    },
+    footerBottom: {
+        borderTop: '1px solid #F0D9C8',
+        paddingTop: 20,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap' as any,
+        gap: 8,
+    },
+    footerCopy: {
+        margin: 0,
+        fontSize: 12,
+        color: '#C8A882',
+    },
+    demoVideoBox: {
+        position: 'relative',
+        width: '100%',
+        maxWidth: 560,
+        aspectRatio: '4/3' as any,
+        background: '#1d2735',
+        borderRadius: 20,
+        overflow: 'hidden',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+    },
+    demoOffState: {
+        position: 'absolute',
+        inset: 0,
+        display: 'flex',
+        flexDirection: 'column' as any,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 12,
+    },
+    demoOffText: {
+        color: '#9B7355',
+        fontSize: 14,
+        fontWeight: 600,
+        fontFamily: "'Manrope', sans-serif",
+        margin: 0,
+    },
+    demoPredictionBadge: {
+        position: 'absolute',
+        bottom: 16,
+        left: '50%',
+        transform: 'translateX(-50%)',
+        borderRadius: 50,
+        padding: '10px 28px',
+        minWidth: 120,
+        textAlign: 'center' as any,
+        transition: 'background 0.2s ease',
+    },
+    demoPredictionLabel: {
+        color: '#fff',
+        fontSize: 36,
+        fontWeight: 800,
+        fontFamily: "'Manrope', sans-serif",
+        lineHeight: 1,
+    },
+    demoPredictionConf: {
+        color: 'rgba(255,255,255,0.7)',
+        fontSize: 12,
+        fontWeight: 600,
+        fontFamily: "'Manrope', sans-serif",
+        marginTop: 2,
+    },
+    demoIdleText: {
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 14,
+        fontWeight: 600,
+        fontFamily: "'Manrope', sans-serif",
+    },
+    demoButtons: {
+        display: 'flex',
+        gap: 12,
+    },
+    demoStartBtn: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '12px 28px',
+        borderRadius: 50,
+        border: 'none',
+        background: '#92400E',
+        color: '#fff',
+        fontWeight: 700,
+        fontSize: 15,
+        cursor: 'pointer',
+        fontFamily: "'Manrope', sans-serif",
+    },
+    demoStopBtn: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '12px 28px',
+        borderRadius: 50,
+        border: '1.5px solid #E7C9B6',
+        background: '#fff',
+        color: '#9B7355',
+        fontWeight: 700,
+        fontSize: 15,
+        cursor: 'pointer',
+        fontFamily: "'Manrope', sans-serif",
+    },
+    demoHint: {
+        margin: 0,
+        fontSize: 13,
+        color: '#9B7355',
+        fontFamily: "'Manrope', sans-serif",
+        textAlign: 'center' as any,
+        maxWidth: 400,
+    },
+    demoHintLink: {
+        color: '#C2410C',
+        fontWeight: 700,
+        cursor: 'pointer',
+    },
+};

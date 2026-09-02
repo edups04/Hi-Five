@@ -56,7 +56,7 @@ const AuthSuccess = () => {
                         setUser(res.data.user);
                         localStorage.setItem("user", JSON.stringify(res.data.user));
                         const userRole = res.data.user?.role;
-                        navigate(userRole === 'admin' ? '/admin' : '/home');
+                        navigate(userRole === 'admin' ? '/admin' : '/feed');
                     } else {
                         navigate("/auth");
                     }

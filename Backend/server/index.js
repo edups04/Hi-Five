@@ -501,6 +501,17 @@ app.post('/check-duplicate', async (req, res) => {
     }
 });
 
+app.post('/onboarding-complete', async (req, res) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ success: false });
+    jwt.verify(token, process.env.SECRET_KEY, async (err, decoded) => {
+        if (err) return res.status(403).json({ success: false });
+        await UsersModel.findByIdAndUpdate(decoded.id, { hasSeenOnboarding: true });
+        res.json({ success: true });
+    });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

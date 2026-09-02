@@ -3,6 +3,7 @@ export interface Prediction {
   confidence: number;
   hand_detected: boolean;
   hand_count: number;
+  is_word_sign?: boolean;
 }
 
 export type SignMode = "asl" | "fsl" | "both";

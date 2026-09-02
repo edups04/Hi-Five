@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/Hi-five.png';
 import { libraryCss as css, libraryStyles as s } from '../styles/pages/Library.styles';
-import { Check, CirclePlay, ListVideo, Loader2, LogOut, Menu, PlusCircle, Search, Settings, Trash2, Video, X } from 'lucide-react';
+import { Check, CirclePlay, Home as HomeIcon, ListVideo, Loader2, LogOut, Menu, PlusCircle, Search, Settings as SettingsIcon, Trash2, Video, X } from 'lucide-react';
 import { getData } from '../context/userContext';
 import { listRecordings, renameRecording, deleteRecording, type RecordingMeta } from '../lib/recordingsClient';
 import { formatDuration, formatRelativeDate, recordingCountLabel } from '../lib/formatters';
@@ -27,7 +27,7 @@ function RecordingThumbnail({ id }: { id: string }) {
     );
 }
 
-type NavItem = 'record' | 'library' | 'settings';
+type NavItem = 'home' | 'record' | 'library' | 'settings';
 
 function Library() {
     const navigate = useNavigate();
@@ -124,24 +124,26 @@ function Library() {
     try { userObj = userRaw ? JSON.parse(userRaw) : null; } catch { userObj = null; }
 
     const currentUser = (user && typeof user === 'object' ? user : null) || (userObj && typeof userObj === 'object' ? userObj : null);
-    const picture = currentUser?.picture || currentUser?.profileObj?.imageUrl || null;
+    const picture = currentUser?.avatar || currentUser?.picture || currentUser?.profileObj?.imageUrl || null;
     const userName = currentUser?.username || currentUser?.name || currentUser?.given_name || currentUser?.displayName || currentUser?.profileObj?.name || currentUser?.profileObj?.givenName || 'Guest';
     const avatarInitial = String(userName).trim().charAt(0).toUpperCase() || 'G';
-
+    
     function logout() { localStorage.removeItem('accessToken'); localStorage.removeItem('user'); navigate('/auth'); }
-    function goToRecordPage() { navigate('/home'); setMobileMenuOpen(false); }
+    function goToRecordPage() { navigate('/recording'); setMobileMenuOpen(false); }
     function handleNavSelect(item: NavItem) {
+        if (item === 'home') { navigate('/feed'); setMobileMenuOpen(false); return; }
         if (item === 'record') { goToRecordPage(); return; }
         if (item === 'settings') { navigate('/settings'); setMobileMenuOpen(false); return; }
         setActiveNav(item); setMobileMenuOpen(false);
     }
 
     const navItems = [
-        { id: 'record' as NavItem, label: 'Record', icon: <Video size={18} strokeWidth={1.8} /> },
-        { id: 'library' as NavItem, label: 'Library', icon: <ListVideo size={18} strokeWidth={1.8} /> },
-        { id: 'settings' as NavItem, label: 'Settings', icon: <Settings size={18} strokeWidth={1.8} /> },
+        { id: 'home' as NavItem, label: 'Home', icon: <HomeIcon size={18} strokeWidth={1.8} />, path: '/feed', active: false },
+        { id: 'record' as NavItem, label: 'Recording', icon: <Video size={18} strokeWidth={1.8} />, path: '/recording', active: false },
+        { id: 'library' as NavItem, label: 'Library', icon: <ListVideo size={18} strokeWidth={1.8} />, path: '/library', active: true },
+        { id: 'settings' as NavItem, label: 'Settings', icon: <SettingsIcon size={18} strokeWidth={1.8} />, path: '/settings', active: false },
     ];
-
+    
     return (
         <div style={s.root} className="home-root">
             <style>{css}</style>
@@ -158,7 +160,7 @@ function Library() {
                                 <img src={logo} alt="Hi-Five logo" style={{ width: '60px', height: '90px' }} />
                                 <div>
                                     <div style={s.brandName}>Hi-Five</div>
-                                    <div style={s.brandSub}>ASL MADE VISIBLE</div>
+                                    <div style={s.brandSub}>SIGNING MADE VISIBLE</div>
                                 </div>
                             </div>
                         </div>

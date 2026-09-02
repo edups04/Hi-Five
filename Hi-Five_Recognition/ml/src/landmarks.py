@@ -13,9 +13,16 @@ from mediapipe.tasks.python import vision as mp_vision
 
 NUM_LANDMARKS = 21
 COORDS_PER_LANDMARK = 3
-RAW_FEATURE_DIM = NUM_LANDMARKS * COORDS_PER_LANDMARK
+RAW_FEATURE_DIM = NUM_LANDMARKS * COORDS_PER_LANDMARK        # 63
 ENGINEERED_FEATURE_DIM = 27
-FEATURE_DIM = RAW_FEATURE_DIM + ENGINEERED_FEATURE_DIM
+FEATURE_DIM = RAW_FEATURE_DIM + ENGINEERED_FEATURE_DIM       # 90
+
+# Word sign feature dim (per hand):
+# normalized(90) + engineered(27) + word_extra(10) = 127
+# Two hands padded: 127 * 2 = 254
+WORD_EXTRA_FEATURE_DIM = 10
+WORD_FEATURE_DIM_ONE_HAND = FEATURE_DIM + WORD_EXTRA_FEATURE_DIM   # 127
+WORD_FEATURE_DIM = WORD_FEATURE_DIM_ONE_HAND * 2                    # 254
 
 WRIST_IDX = 0
 MIDDLE_FINGER_MCP_IDX = 9
@@ -104,12 +111,77 @@ def build_feature_vector(landmarks_flat: np.ndarray) -> np.ndarray:
     return np.concatenate([normalized, engineered]).astype(np.float32)
 
 
+def build_word_sign_features_one_hand(landmarks_flat: np.ndarray) -> np.ndarray:
+    """
+    Extended feature vector for one hand in a word sign.
+    127 dimensions: normalized(90) + engineered(27) + extra(10)
+    """
+    base = build_feature_vector(landmarks_flat)
+    raw = np.asarray(landmarks_flat, dtype=np.float32).reshape(NUM_LANDMARKS, COORDS_PER_LANDMARK)
+
+    extra: list[float] = []
+
+    # Absolute wrist XYZ
+    extra.append(float(raw[WRIST_IDX, 0]))
+    extra.append(float(raw[WRIST_IDX, 1]))
+    extra.append(float(raw[WRIST_IDX, 2]))
+
+    # Palm normal vector
+    index_mcp = raw[5]
+    pinky_mcp  = raw[17]
+    wrist      = raw[0]
+    v1 = index_mcp - wrist
+    v2 = pinky_mcp - wrist
+    palm_normal = np.cross(v1, v2)
+    norm_mag = np.linalg.norm(palm_normal)
+    if norm_mag > 1e-6:
+        palm_normal = palm_normal / norm_mag
+    extra.extend([float(palm_normal[0]), float(palm_normal[1]), float(palm_normal[2])])
+
+    # Middle fingertip absolute Y and Z
+    extra.append(float(raw[12, 1]))
+    extra.append(float(raw[12, 2]))
+
+    # Wrist Y relative to image center
+    extra.append(float(0.5 - raw[WRIST_IDX, 1]))
+
+    # Finger spread
+    fingertip_x = [raw[tip, 0] for tip in FINGER_TIPS]
+    extra.append(float(np.std(fingertip_x)))
+
+    return np.concatenate([base, np.array(extra, dtype=np.float32)]).astype(np.float32)
+
+
+def build_word_sign_feature_vector(
+    hand1_flat: np.ndarray,
+    hand2_flat: Optional[np.ndarray] = None,
+) -> np.ndarray:
+    """
+    Two-hand word sign feature vector — 254 dimensions.
+    hand1_flat: dominant hand landmarks (always present)
+    hand2_flat: second hand landmarks — padded with zeros if not detected
+    """
+    h1_features = build_word_sign_features_one_hand(hand1_flat)
+
+    if hand2_flat is not None:
+        h2_features = build_word_sign_features_one_hand(hand2_flat)
+    else:
+        h2_features = np.zeros(WORD_FEATURE_DIM_ONE_HAND, dtype=np.float32)
+
+    out = np.concatenate([h1_features, h2_features]).astype(np.float32)
+    assert out.shape == (WORD_FEATURE_DIM,), (
+        f"Word feature vector wrong shape: {out.shape}, expected ({WORD_FEATURE_DIM},)"
+    )
+    return out
+
+
 @dataclass
 class LandmarkResult:
     found: bool
     raw_landmarks: Optional[np.ndarray]
     normalized: Optional[np.ndarray]
     hand_count: int = 0
+    word_features: Optional[np.ndarray] = None
 
 
 class HandLandmarkExtractor:
@@ -155,13 +227,23 @@ class HandLandmarkExtractor:
             return LandmarkResult(found=False, raw_landmarks=None, normalized=None, hand_count=0)
 
         hand_count = len(detection.hand_landmarks)
-        hand = detection.hand_landmarks[0]
-        raw = np.array([[lm.x, lm.y, lm.z] for lm in hand], dtype=np.float32).flatten()
+
+        # Primary hand (dominant)
+        hand1 = detection.hand_landmarks[0]
+        raw1 = np.array([[lm.x, lm.y, lm.z] for lm in hand1], dtype=np.float32).flatten()
+
+        # Second hand if present
+        raw2 = None
+        if hand_count >= 2:
+            hand2 = detection.hand_landmarks[1]
+            raw2 = np.array([[lm.x, lm.y, lm.z] for lm in hand2], dtype=np.float32).flatten()
+
         return LandmarkResult(
             found=True,
-            raw_landmarks=raw,
-            normalized=build_feature_vector(raw),
+            raw_landmarks=raw1,
+            normalized=build_feature_vector(raw1),
             hand_count=hand_count,
+            word_features=build_word_sign_feature_vector(raw1, raw2),
         )
 
     def close(self) -> None:

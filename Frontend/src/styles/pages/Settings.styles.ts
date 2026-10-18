@@ -21,8 +21,20 @@ export const settingsStyles: Record<string, CSSProperties> = {
 	brand: { display: "flex", alignItems: "center", gap: "10px", paddingLeft: "4px" },
 	brandName: { fontSize: "18px", fontWeight: 800, color: "#3B1A00", letterSpacing: "-0.01em" },
 	brandSub: { fontSize: "9px", color: "#C2410C", fontWeight: 700, letterSpacing: "0.1em", marginTop: "1px" },
-	mobileTopRow: { display: "block" },
-	mobileMenuBtn: { display: "none" },
+	mobileTopRow: { display: "none" },
+	mobileMenuBtn: {
+		display: "inline-flex",
+		alignItems: "center",
+		justifyContent: "center",
+		width: "42px",
+		height: "42px",
+		borderRadius: "10px",
+		border: "1px solid #E9CDB7",
+		background: "#fff4ec",
+		color: "#C2410C",
+		cursor: "pointer",
+		flexShrink: 0,
+	},
 	nav: { display: "flex", flexDirection: "column", gap: "4px" },
 	navItem: {
 		display: "flex",
@@ -269,13 +281,17 @@ export const settingsCss = `
 			width: 100% !important;
 			border-right: none !important;
 			border-bottom: 1px solid #F0D9C8 !important;
-			padding: 14px 16px !important;
+			padding: 12px 16px !important;
+			flex-direction: row !important;
+			justify-content: unset !important;
+			align-items: center !important;
 		}
-		.settings-sidebar-top { gap: 0 !important; }
+		.settings-sidebar-top { gap: 0 !important; width: 100% !important; }
+		.settings-brand-desktop { display: none !important; }
 		.settings-mobile-top-row {
 			display: flex !important;
 			align-items: center !important;
-			gap: 10px !important;
+			width: 100% !important;
 		}
 		.settings-mobile-left-group {
 			display: flex !important;
@@ -297,7 +313,6 @@ export const settingsCss = `
 		}
 		.settings-nav { display: none !important; }
 		.settings-sidebar-bottom { display: none !important; }
-		.settings-brand img { height: 62px !important; }
 		.settings-main { padding: 16px !important; }
 		.settings-profile-card {
 			flex-direction: column !important;
@@ -351,6 +366,14 @@ export const settingsCss = `
 			margin-top: auto !important;
 			padding-top: 12px !important;
 			border-top: 1px solid #efd9c8 !important;
+			display: flex !important;
+			flex-direction: column !important;
+			gap: 4px !important;
+		}
+		.settings-mobile-drawer-bottom .settings-logout-btn {
+			width: 100% !important;
+			justify-content: center !important;
+			border-radius: 10px !important;
 		}
 	}
 

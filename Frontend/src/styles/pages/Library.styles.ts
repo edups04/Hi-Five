@@ -4,9 +4,9 @@ export const libraryStyles: Record<string, CSSProperties> = {
     root: { display: "flex", height: "100vh", background: "#FAF0E8", fontFamily: "'Manrope', sans-serif", overflow: "hidden" },
     sidebar: { width: "210px", flexShrink: 0, background: "#FAF0E8", borderRight: "1px solid #F0D9C8", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "28px 16px 24px" },
     sidebarTop: { display: "flex", flexDirection: "column", gap: "32px" },
-    mobileTopRow: { display: "block" },
-    mobileActions: { display: "none" },
-    mobileMenuBtn: { display: "none" },
+    mobileTopRow: { display: "none" },
+    mobileActions: { display: "flex", alignItems: "center", gap: "10px" },
+    mobileMenuBtn: { display: "inline-flex", alignItems: "center", justifyContent: "center" },
     brand: { display: "flex", alignItems: "center", gap: "10px", paddingLeft: "4px" },
     brandName: { fontSize: "18px", fontWeight: 800, color: "#3B1A00", letterSpacing: "-0.01em" },
     brandSub: { fontSize: "9px", color: "#C2410C", fontWeight: 700, letterSpacing: "0.1em", marginTop: "1px" },
@@ -27,33 +27,33 @@ export const libraryStyles: Record<string, CSSProperties> = {
     libraryTools: { display: "flex", alignItems: "center", gap: "10px" },
     searchWrap: { display: "flex", alignItems: "center", gap: "10px", minWidth: "220px", width: "220px", background: "#F3D9C5", border: "1px solid #EBC9AF", borderRadius: "999px", padding: "10px 14px" },
     searchInput: { border: "none", outline: "none", background: "transparent", fontSize: "14px", color: "#6D492F", width: "100%", fontFamily: "'Manrope', sans-serif" },
-    libraryGrid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "16px" },
-    recordCard: { background: "#fff", borderRadius: "30px", overflow: "hidden", border: "1px solid #F0DDD1", boxShadow: "0 8px 22px rgba(64, 34, 12, 0.07)" },
-    recordPreview: { position: "relative", height: "240px", background: "radial-gradient(ellipse at center, #1d2735 0%, #05070b 100%)" },
-    durationPill: { position: "absolute", left: "16px", bottom: "12px", background: "#A84B0E", color: "#fff", fontSize: "12px", fontWeight: 700, letterSpacing: "0.01em", padding: "3px 10px", borderRadius: "999px", zIndex: 2 },
-    deleteBtn: { position: "absolute", right: "14px", top: "10px", border: "none", background: "rgba(0,0,0,0.45)", color: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "6px", borderRadius: "50%", zIndex: 2 },
-    recordMetaRow: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "18px 20px 20px" },
-    recordTitle: { margin: 0, color: "#4B2A14", fontSize: "37px", lineHeight: 1, letterSpacing: "-0.02em", fontWeight: 800 },
-    recordMeta: { margin: "5px 0 0", color: "#9B7355", fontSize: "13px", fontWeight: 600 },
-    recordActions: { display: "flex", alignItems: "center", gap: "8px" },
-    recordActionBtn: { border: "none", borderRadius: "14px", padding: "10px 16px", display: "inline-flex", alignItems: "center", gap: "7px", fontSize: "16px", fontWeight: 800, cursor: "pointer", fontFamily: "'Manrope', sans-serif" },
+    libraryGrid: { display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "16px 12px" },
+    recordCard: { background: "transparent", borderRadius: "0", overflow: "visible", border: "none", boxShadow: "none" },
+    recordPreview: { position: "relative", width: "100%", aspectRatio: "16/9", background: "radial-gradient(ellipse at center, #1d2735 0%, #05070b 100%)", borderRadius: "10px", overflow: "hidden" },
+    durationPill: { position: "absolute", right: "6px", bottom: "6px", background: "rgba(0,0,0,0.78)", color: "#fff", fontSize: "11px", fontWeight: 700, letterSpacing: "0.01em", padding: "2px 6px", borderRadius: "4px", zIndex: 2 },
+    deleteBtn: { position: "absolute", right: "8px", top: "8px", border: "none", background: "rgba(0,0,0,0.55)", color: "#fff", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "5px", borderRadius: "50%", zIndex: 2 },
+    recordMetaRow: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px", padding: "10px 2px 4px" },
+    recordTitle: { margin: 0, color: "#0f0f0f", fontSize: "14px", lineHeight: 1.4, letterSpacing: "-0.01em", fontWeight: 700, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" },
+    recordMeta: { margin: "3px 0 0", color: "#606060", fontSize: "12px", fontWeight: 500 },
+    recordActions: { display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 },
+    recordActionBtn: { border: "none", borderRadius: "10px", padding: "7px 12px", display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "12px", fontWeight: 700, cursor: "pointer", fontFamily: "'Manrope', sans-serif" },
     playActionBtn: { background: "#FF841E", color: "#3A200F" },
     editActionBtn: { background: "#F0D1BD", color: "#6F4120" },
 
     inlineEditInput: {
         flex: 1,
         minWidth: 0,
-        fontSize: "22px",
-        fontWeight: 800,
-        color: "#4B2A14",
+        fontSize: "13px",
+        fontWeight: 700,
+        color: "#0f0f0f",
         fontFamily: "'Manrope', sans-serif",
-        letterSpacing: "-0.02em",
-        border: "2px solid #F97316",
-        borderRadius: "10px",
-        padding: "4px 10px",
+        letterSpacing: "-0.01em",
+        border: "1.5px solid #F97316",
+        borderRadius: "8px",
+        padding: "4px 8px",
         background: "#FFF7F0",
         outline: "none",
-        lineHeight: 1.2,
+        lineHeight: 1.4,
     },
     inlineConfirmBtn: {
         width: 30,
@@ -103,16 +103,16 @@ export const libraryCss = `
     .inline-edit-cancel:hover { background: #DC2626 !important; }
 
     @media (max-width: 900px) {
+        .home-brand-desktop { display: none !important; }
         .home-root { flex-direction: column !important; height: auto !important; min-height: 100vh !important; overflow: auto !important; }
-        .home-sidebar { width: 100% !important; border-right: none !important; border-bottom: 1px solid #F0D9C8 !important; padding: 16px !important; gap: 14px !important; }
+        .home-sidebar { width: 100% !important; border-right: none !important; border-bottom: 1px solid #F0D9C8 !important; padding: 12px 16px !important; flex-direction: row !important; justify-content: unset !important; align-items: center !important; }
         .home-sidebar-top { gap: 14px !important; }
-        .home-mobile-top-row { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 10px !important; }
+        .home-mobile-top-row { display: flex !important; align-items: center !important; justify-content: space-between !important; width: 100% !important; }
         .home-mobile-left-group { display: flex !important; align-items: center !important; gap: 10px !important; min-width: 0 !important; }
         .home-mobile-left-group .home-brand { min-width: 0 !important; }
-        .home-brand img { width: 58px !important; height: 62px !important; }
         .home-mobile-actions { display: flex !important; align-items: center !important; gap: 10px !important; }
-        .home-mobile-avatar, .home-mobile-avatar-fallback { width: 46px !important; height: 46px !important; }
-        .home-mobile-menu-btn { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 42px !important; height: 42px !important; border-radius: 10px !important; border: 1px solid #E9CDB7 !important; background: #fff4ec !important; color: #C2410C !important; cursor: pointer !important; flex-shrink: 0 !important; }
+        .home-mobile-avatar, .home-mobile-avatar-fallback { width: 40px !important; height: 40px !important; }
+        .home-mobile-menu-btn { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 40px !important; height: 40px !important; border-radius: 10px !important; border: 1px solid #E9CDB7 !important; background: #fff4ec !important; color: #C2410C !important; cursor: pointer !important; flex-shrink: 0 !important; }
         .home-nav { display: none !important; flex-direction: column !important; gap: 8px !important; padding-top: 4px !important; }
         .home-nav .nav-item { width: 100% !important; padding: 9px 12px !important; font-size: 13px !important; }
         .home-sidebar-bottom { display: none !important; flex-direction: row !important; gap: 10px !important; }
@@ -122,19 +122,16 @@ export const libraryCss = `
         .home-library-tools { justify-content: space-between !important; width: 100% !important; }
         .home-library-tools .home-header-avatar, .home-library-tools .home-header-avatar-fallback { display: none !important; }
         .home-library-search { flex: 1 !important; width: auto !important; min-width: 0 !important; }
-        .home-library-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
-        .home-record-preview { height: 190px !important; }
-        .home-record-card h3 { font-size: 30px !important; }
-        .home-record-card p { font-size: 12px !important; }
-        .home-record-card .home-action-btn { font-size: 14px !important; padding: 9px 14px !important; }
+        .home-library-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 14px 10px !important; }
+        .home-record-card .home-action-btn { font-size: 12px !important; padding: 6px 10px !important; }
         .home-mobile-overlay { position: fixed !important; inset: 0 !important; background: rgba(0,0,0,0.28) !important; opacity: 0 !important; pointer-events: none !important; transition: opacity 0.2s ease !important; z-index: 30 !important; }
         .home-mobile-overlay-open { opacity: 1 !important; pointer-events: auto !important; }
         .home-mobile-drawer { position: fixed !important; top: 0 !important; left: 0 !important; bottom: 0 !important; width: min(78vw, 290px) !important; background: #FAF0E8 !important; border-right: 1px solid #EFD8C7 !important; box-shadow: 8px 0 30px rgba(30,18,10,0.12) !important; transform: translateX(-104%) !important; transition: transform 0.24s ease !important; z-index: 40 !important; display: flex !important; flex-direction: column !important; justify-content: flex-start !important; padding: 16px !important; gap: 14px !important; }
         .home-mobile-drawer-open { transform: translateX(0) !important; }
         .home-mobile-drawer-top { display: flex !important; justify-content: flex-end !important; }
         .home-mobile-drawer-nav { display: flex !important; flex-direction: column !important; gap: 8px !important; }
-        .home-mobile-drawer-bottom { margin-top: auto !important; padding-top: 12px !important; border-top: 1px solid #efd9c8 !important; }
-        .home-mobile-drawer-bottom .logout-btn { width: 100% !important; justify-content: flex-start !important; color: #7A4520 !important; border-radius: 10px !important; background: transparent !important; }
+        .home-mobile-drawer-bottom { margin-top: auto !important; padding-top: 12px !important; border-top: 1px solid #efd9c8 !important; display: flex !important; flex-direction: column !important; gap: 4px !important; }
+        .home-mobile-drawer-bottom .logout-btn { width: 100% !important; justify-content: center !important; color: #7A4520 !important; border-radius: 10px !important; background: transparent !important; }
     }
     @media (min-width: 901px) {
         .home-mobile-overlay, .home-mobile-drawer { display: none !important; }
@@ -142,8 +139,7 @@ export const libraryCss = `
     @media (max-width: 640px) {
         .home-library-title { font-size: 27px !important; }
         .home-library-subtitle { font-size: 12px !important; }
-        .home-record-preview { height: 170px !important; }
-        .home-record-card { border-radius: 20px !important; }
-        .home-record-card .home-record-meta-row { flex-direction: column !important; align-items: flex-start !important; }
+        .home-library-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px 8px !important; }
+        .home-record-card .home-record-meta-row { flex-direction: column !important; align-items: flex-start !important; gap: 6px !important; }
     }
 `;

@@ -1,0 +1,302 @@
+asl training results
+[done] Training complete
+  Best epoch     : 145
+  Best val loss  : 1.5206
+  Best val acc   : 82.98%
+  Model saved    : models\asl_tcn.pth
+  Label map saved: models\asl_label_map.csv
+
+asl evaluation results
+=================================================================
+  OVERALL RESULTS (Test Set)
+=================================================================
+  Accuracy  : 80.43%
+  Precision : 81.81%  (macro)
+  Recall    : 80.62%  (macro)
+  F1 Score  : 80.38%  (macro)
+  Samples   : 1446
+
+─────────────────────────────────────────────────────────────────
+  PER-CLASS ACCURACY
+─────────────────────────────────────────────────────────────────
+  #     Gloss                      Correct   Total      Acc
+  -------------------------------------------------------
+  104   WRISTWATCH1                      5      12    41.7% ←
+  103   WISH                             6      13    46.2% ←
+  22    CHRISTMAS1                       8      17    47.1% ←
+  55    HUNGRY                           6      12    50.0%
+  68    MOVIE1                           9      17    52.9%
+  18    BREAKFAST1                       8      15    53.3%
+  81    RIVER1                           8      15    53.3%
+  39    EGGBEATER                        7      12    58.3%
+  42    EXAMPLE                          7      12    58.3%
+  43    FILM                             7      12    58.3%
+  92    SSHH                             7      12    58.3%
+  70    NIGHT1                          10      17    58.8%
+  71    NOON1                            9      15    60.0%
+  56    HURDLE/TRIP1                     8      13    61.5%
+  98    TYPE1                           10      16    62.5%
+  36    DRAG1                           11      17    64.7%
+  54    HOSPITAL1                       11      17    64.7%
+  7     AXE1                            10      15    66.7%
+  32    DINNER1                         10      15    66.7%
+  41    EVERYDAY                         8      12    66.7%
+  53    HONK                             8      12    66.7%
+  59    LATER                            8      12    66.7%
+  79    RELEASE                          8      12    66.7%
+  91    SPECIAL1                        10      15    66.7%
+  80    RESEARCH1                       11      16    68.8%
+  100   VOTE                             9      13    69.2%
+  61    LOCK1                           10      14    71.4%
+  62    LUNCH1                          10      14    71.4%
+  40    ELEVATOR1                       11      15    73.3%
+  0     5DOLLARS                         9      12    75.0%
+  8     BACKOUT                          9      12    75.0%
+  13    BELIEVE1                        12      16    75.0%
+  16    BLOW                             9      12    75.0%
+  34    DOUBLE                           9      12    75.0%
+  58    KITCHEN                          9      12    75.0%
+  60    LETTUCE1                        12      16    75.0%
+  76    PATIENT2                        12      16    75.0%
+  90    SPAIN                            9      12    75.0%
+  37    EAT1                            13      17    76.5%
+  46    FOREIGNER1                      13      17    76.5%
+  21    CATHOLIC                        10      13    76.9%
+  29    DEMAND1                         11      14    78.6%
+  9     BACKPACK1                       12      15    80.0%
+  26    DEAF1                           12      15    80.0%
+  66    MICROSCOPE1                     13      16    81.2%
+  23    CLOUD1                          14      17    82.4%
+  33    DOG1                            14      17    82.4%
+  1     ACCESS                          10      12    83.3%
+  3     ALITTLEBIT                      10      12    83.3%
+  10    BASKET1                         10      12    83.3%
+  17    BRAINWASH                       10      12    83.3%
+  63    MCDONALDS                       10      12    83.3%
+  72    ONLYONE                         10      12    83.3%
+  77    PRACTICE                        10      12    83.3%
+  88    SOCIALIZE                       10      12    83.3%
+  89    SOON1                           10      12    83.3%
+  96    TUESDAY                         10      12    83.3%
+  99    UPSET1                          10      12    83.3%
+  12    BEE1                            12      14    85.7%
+  30    DEVELOP1                        12      14    85.7%
+  20    CANCER1                         13      15    86.7%
+  24    CONFUSED1                       13      15    86.7%
+  27    DECIDE1                         13      15    86.7%
+  86    SHAVE1                          13      15    86.7%
+  97    TWINS1                          13      15    86.7%
+  44    FINE1                           14      16    87.5%
+  11    BASKETBALL1                     18      20    90.0%
+  2     ADMIT                           11      12    91.7%
+  5     ARREST1                         11      12    91.7%
+  6     ASTRONAUT                       11      12    91.7%
+  28    DEGREE                          11      12    91.7%
+  31    DIFFERENT                       11      12    91.7%
+  45    FLASHLIGHT1                     11      12    91.7%
+  47    GIFT                            11      12    91.7%
+  51    HEADACHE                        11      12    91.7%
+  52    HEART                           11      12    91.7%
+  57    INTEREST                        11      12    91.7%
+  65    MEXICAN1                        11      12    91.7%
+  69    NEAR                            11      12    91.7%
+  83    RUN1                            11      12    91.7%
+  84    SECRETARY                       11      12    91.7%
+  85    SENATE                          11      12    91.7%
+  87    SNORKEL                         11      12    91.7%
+  101   WANT1                           11      12    91.7%
+  15    BITE1                           13      14    92.9%
+  49    GUESS1                          13      14    92.9%
+  38    EDIT1                           14      15    93.3%
+  75    PARTY1                          14      15    93.3%
+  19    CALENDAR1                       15      16    93.8%
+  35    DOWNSIZE1                       15      16    93.8%
+  64    MECHANIC1                       15      16    93.8%
+  78    RECENT1                         16      17    94.1%
+  4     ANNOUNCE                        12      12   100.0%
+  14    BELT1                           18      18   100.0%
+  25    DARK1                           15      15   100.0%
+  48    GIRAFFE                         12      12   100.0%
+  50    HALLOWEEN1                      14      14   100.0%
+  67    MIRROR                          12      12   100.0%
+  73    OPPORTUNITY                     12      12   100.0%
+  74    PARAGRAPH                       12      12   100.0%
+  82    ROCKINGCHAIR1                   15      15   100.0%
+  93    SWITZERLAND                     12      12   100.0%
+  94    TEAM                            12      12   100.0%
+  95    THIRD1                          14      14   100.0%
+  102   WHATFOR1                        18      18   100.0%
+
+─────────────────────────────────────────────────────────────────
+  TOP 10 MOST CONFUSED SIGN PAIRS
+─────────────────────────────────────────────────────────────────
+   Count  True Label                Predicted As             
+  ----------------------------------------------------------
+       6  WISH                      HUNGRY                   
+       6  HUNGRY                    WISH                     
+       4  SSHH                      DEAF1                    
+       4  CHRISTMAS1                NOON1                    
+       3  WRISTWATCH1               FILM                     
+       3  NIGHT1                    ACCESS                   
+       3  MOVIE1                    DEMAND1                  
+       3  LATER                     SNORKEL                  
+       3  EXAMPLE                   DEMAND1                  
+       2  TYPE1                     MECHANIC1                
+
+=================================================================
+  SUMMARY
+=================================================================
+  Test accuracy      : 80.43%
+  Classes below 50%  : 3
+  Best class acc     : 100.0%
+  Worst class acc    : 41.7%
+  Avg class acc      : 80.6%
+
+
+fsl training results
+[done] FSL Training complete
+  Best epoch     : 106
+  Best val loss  : 0.9214
+  Best val acc   : 99.41%
+  Model saved    : models\fsl_tcn.pth
+
+fsl evaluation report
+=================================================================
+  OVERALL RESULTS (Official Test Set)
+=================================================================
+  Accuracy  : 98.59%
+  Precision : 98.98%  (macro)
+  Recall    : 98.57%  (macro)
+  F1 Score  : 98.56%  (macro)
+  Samples   : 426
+
+─────────────────────────────────────────────────────────────────
+  PER-CLASS ACCURACY
+─────────────────────────────────────────────────────────────────
+  #     Gloss                      Correct   Total      Acc
+  -------------------------------------------------------
+  26    SEVEN                            2       4    50.0%
+  8     YOURE WELCOME                    3       4    75.0%
+  36    JULY                             3       4    75.0%
+  39    OCTOBER                          3       4    75.0%
+  61    PARENTS                          3       4    75.0%
+  0     GOOD MORNING                     4       4   100.0%
+  1     GOOD AFTERNOON                   4       4   100.0%
+  2     GOOD EVENING                     5       5   100.0%
+  3     HELLO                            4       4   100.0%
+  4     HOW ARE YOU                      4       4   100.0%
+  5     IM FINE                          4       4   100.0%
+  6     NICE TO MEET YOU                 5       5   100.0%
+  7     THANK YOU                        4       4   100.0%
+  9     SEE YOU TOMORROW                 4       4   100.0%
+  10    UNDERSTAND                       4       4   100.0%
+  11    DON’T UNDERSTAND                 4       4   100.0%
+  12    KNOW                             4       4   100.0%
+  13    DON’T KNOW                       4       4   100.0%
+  14    NO                               4       4   100.0%
+  15    YES                              4       4   100.0%
+  16    WRONG                            4       4   100.0%
+  17    CORRECT                          5       5   100.0%
+  18    SLOW                             4       4   100.0%
+  19    FAST                             4       4   100.0%
+  20    ONE                              4       4   100.0%
+  21    TWO                              4       4   100.0%
+  22    THREE                            4       4   100.0%
+  23    FOUR                             4       4   100.0%
+  24    FIVE                             4       4   100.0%
+  25    SIX                              4       4   100.0%
+  27    EIGHT                            4       4   100.0%
+  28    NINE                             4       4   100.0%
+  29    TEN                              4       4   100.0%
+  30    JANUARY                          4       4   100.0%
+  31    FEBRUARY                         4       4   100.0%
+  32    MARCH                            4       4   100.0%
+  33    APRIL                            4       4   100.0%
+  34    MAY                              4       4   100.0%
+  35    JUNE                             4       4   100.0%
+  37    AUGUST                           5       5   100.0%
+  38    SEPTEMBER                        4       4   100.0%
+  40    NOVEMBER                         5       5   100.0%
+  41    DECEMBER                         5       5   100.0%
+  42    MONDAY                           4       4   100.0%
+  43    TUESDAY                          4       4   100.0%
+  44    WEDNESDAY                        4       4   100.0%
+  45    THURSDAY                         4       4   100.0%
+  46    FRIDAY                           4       4   100.0%
+  47    SATURDAY                         4       4   100.0%
+  48    SUNDAY                           4       4   100.0%
+  49    TODAY                            4       4   100.0%
+  50    TOMORROW                         4       4   100.0%
+  51    YESTERDAY                        4       4   100.0%
+  52    FATHER                           4       4   100.0%
+  53    MOTHER                           4       4   100.0%
+  54    SON                              4       4   100.0%
+  55    DAUGHTER                         4       4   100.0%
+  56    GRANDFATHER                      4       4   100.0%
+  57    GRANDMOTHER                      4       4   100.0%
+  58    UNCLE                            4       4   100.0%
+  59    AUNTIE                           4       4   100.0%
+  60    COUSIN                           4       4   100.0%
+  62    BOY                              4       4   100.0%
+  63    GIRL                             4       4   100.0%
+  64    MAN                              4       4   100.0%
+  65    WOMAN                            4       4   100.0%
+  66    DEAF                             4       4   100.0%
+  67    HARD OF HEARING                  4       4   100.0%
+  68    WEELCHAIR PERSON                 4       4   100.0%
+  69    BLIND                            4       4   100.0%
+  70    DEAF BLIND                       4       4   100.0%
+  71    MARRIED                          4       4   100.0%
+  72    BLUE                             4       4   100.0%
+  73    GREEN                            4       4   100.0%
+  74    RED                              4       4   100.0%
+  75    BROWN                            4       4   100.0%
+  76    BLACK                            4       4   100.0%
+  77    WHITE                            4       4   100.0%
+  78    YELLOW                           4       4   100.0%
+  79    ORANGE                           4       4   100.0%
+  80    GRAY                             4       4   100.0%
+  81    PINK                             4       4   100.0%
+  82    VIOLET                           4       4   100.0%
+  83    LIGHT                            4       4   100.0%
+  84    DARK                             4       4   100.0%
+  85    BREAD                            4       4   100.0%
+  86    EGG                              4       4   100.0%
+  87    FISH                             4       4   100.0%
+  88    MEAT                             4       4   100.0%
+  89    CHICKEN                          4       4   100.0%
+  90    SPAGHETTI                        4       4   100.0%
+  91    RICE                             4       4   100.0%
+  92    LONGANISA                        4       4   100.0%
+  93    SHRIMP                           4       4   100.0%
+  94    CRAB                             4       4   100.0%
+  95    HOT                              4       4   100.0%
+  96    COLD                             4       4   100.0%
+  97    JUICE                            4       4   100.0%
+  98    MILK                             4       4   100.0%
+  99    COFFEE                           4       4   100.0%
+  100   TEA                              4       4   100.0%
+  101   BEER                             4       4   100.0%
+  102   WINE                             4       4   100.0%
+  103   SUGAR                            4       4   100.0%
+  104   NO SUGAR                         4       4   100.0%
+
+─────────────────────────────────────────────────────────────────
+  TOP 10 MOST CONFUSED SIGN PAIRS
+─────────────────────────────────────────────────────────────────
+   Count  True Label                Predicted As             
+  ----------------------------------------------------------
+       2  SEVEN                     FOUR                     
+       1  YOURE WELCOME             NICE TO MEET YOU         
+       1  PARENTS                   UNCLE                    
+       1  OCTOBER                   DECEMBER                 
+       1  JULY                      JUNE                     
+
+=================================================================
+  SUMMARY
+=================================================================
+  Test accuracy      : 98.59%
+  Classes below 50%  : 0
+  Best class acc     : 100.0%
+  Worst class acc    : 50.0%
+  Avg class acc      : 98.6%

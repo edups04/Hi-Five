@@ -7,6 +7,7 @@ export interface Prediction {
 }
 
 export type SignMode = "asl" | "fsl" | "both";
+export type DetectionMode = "alphabet" | "words";
 
 const API_URL =
   (import.meta.env.VITE_ASL_API_URL as string | undefined) ??
@@ -16,6 +17,7 @@ export async function predictFrame(
   imageDataUrl: string,
   signal?: AbortSignal,
   mode: SignMode = "asl",
+  detectionMode: DetectionMode = "alphabet",
 ): Promise<Prediction | null> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 2000);
@@ -32,7 +34,7 @@ export async function predictFrame(
     const res = await fetch(`${API_URL}/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: imageDataUrl, mode }),
+      body: JSON.stringify({ image: imageDataUrl, mode, detection_mode: detectionMode }),
       signal: controller.signal,
     });
 

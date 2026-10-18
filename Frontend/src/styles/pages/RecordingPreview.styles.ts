@@ -26,7 +26,7 @@ export const recordingModalStyles: Record<string, CSSProperties> = {
     padding: "24px",
     width: "100%",
     maxWidth: "1080px",
-    maxHeight: "90vh",
+    maxHeight: "100vh",
     display: "flex",
     flexDirection: "column",
     gap: "18px",
@@ -55,17 +55,11 @@ export const recordingModalStyles: Record<string, CSSProperties> = {
     margin: 0,
   },
 
-  // Video preview container — keeps a 16:9-ish ratio without letterboxing
-  // (the actual recording aspect depends on camera; object-fit: contain).
+  // Video preview container — CustomVideoPlayer manages its own aspect ratio.
   videoWrap: {
     width: "100%",
-    background: "#111",
     borderRadius: "12px",
     overflow: "hidden",
-    aspectRatio: "16 / 9",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
   },
   video: {
     width: "100%",

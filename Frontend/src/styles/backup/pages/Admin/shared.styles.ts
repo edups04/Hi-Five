@@ -1,0 +1,26 @@
+import type { CSSProperties } from "react";
+
+export const sharedStyles: Record<string, CSSProperties> = {
+  content: { padding: "28px 32px", overflowY: "auto", flex: 1 },
+  pageTitle: { fontSize: "26px", fontWeight: 800, color: "#C2410C", margin: "0 0 4px", letterSpacing: "-0.01em", fontFamily: "'Manrope', sans-serif" },
+  pageSubtitle: { fontSize: "13px", color: "#9B7355", margin: "0 0 24px" },
+  statCard: { background: "#fff", borderRadius: "14px", padding: "20px 24px", border: "1px solid #F0D9C8" },
+  statLabel: { fontSize: "11px", fontWeight: 700, color: "#9B7355", letterSpacing: "0.06em", marginBottom: "6px", textTransform: "uppercase" },
+  statValue: { fontSize: "28px", fontWeight: 800, color: "#3B1A00", fontFamily: "'Manrope', sans-serif", letterSpacing: "-0.01em" },
+  statSub: { fontSize: "12px", color: "#9B7355", marginTop: "3px" },
+  statGrid: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" },
+  table: { width: "100%", borderCollapse: "collapse" },
+  th: { padding: "8px 12px", textAlign: "left", fontSize: "11px", fontWeight: 700, color: "#9B7355", letterSpacing: "0.06em" },
+  td: { padding: "14px 12px" },
+  tdSmall: { padding: "12px 12px" },
+  thead: { borderBottom: "1px solid #F0D9C8" },
+  tableRow: { borderBottom: "1px solid #F0D9C8", transition: "background 0.1s ease" },
+  userIdentity: { display: "flex", alignItems: "center", gap: "12px" },
+  userName: { fontWeight: 700, fontSize: "14px", color: "#3B1A00" },
+  userEmail: { fontSize: "12px", color: "#9B7355" },
+  roleBadge: { background: "#FDF0E8", color: "#92400E", padding: "4px 12px", borderRadius: "50px", fontSize: "12px", fontWeight: 600 },
+  pageBtn: { width: "32px", height: "32px", borderRadius: "8px", border: "1px solid #F0D9C8", background: "#fff", cursor: "pointer", transition: "background 0.1s ease", fontFamily: "'Manrope', sans-serif" },
+  pageBtnActive: { border: "none", background: "#F97316", color: "#fff", fontWeight: 700 },
+  pageBtnInactive: { border: "1px solid #F0D9C8", background: "#fff", color: "#3B1A00" },
+  paginationWrap: { padding: "14px 16px", display: "flex", justifyContent: "center", gap: "6px", borderTop: "1px solid #F0D9C8" },
+};

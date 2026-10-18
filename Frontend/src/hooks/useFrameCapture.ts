@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { predictFrame, type Prediction, type SignMode } from "../lib/aslClient";
+import { predictFrame, type Prediction, type SignMode, type DetectionMode } from "../lib/aslClient";
 import { SentenceBuilder } from "../asl/SentenceBuilder";
 
 export interface UseFrameCaptureOptions {
   fps?: number;
   jpegQuality?: number;
   mode?: SignMode;
-  fingerspell?: boolean;
+  detectionMode?: DetectionMode;
 }
 
 export interface UseFrameCaptureResult {
@@ -19,17 +19,17 @@ export interface UseFrameCaptureResult {
 }
 
 const DEFAULT_FPS = 12;
-const DEFAULT_JPEG_QUALITY = 0.92;
+const DEFAULT_JPEG_QUALITY = 0.78;
 
 export function useFrameCapture(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   isActive: boolean,
   options: UseFrameCaptureOptions = {},
 ): UseFrameCaptureResult {
-  const fps         = options.fps         ?? DEFAULT_FPS;
-  const jpegQuality = options.jpegQuality ?? DEFAULT_JPEG_QUALITY;
-  const mode        = options.mode        ?? "asl";
-  const fingerspell = options.fingerspell ?? false;
+  const fps           = options.fps           ?? DEFAULT_FPS;
+  const jpegQuality   = options.jpegQuality   ?? DEFAULT_JPEG_QUALITY;
+  const mode          = options.mode          ?? "asl";
+  const detectionMode = options.detectionMode ?? "alphabet";
 
   const [sentence,       setSentence]       = useState("");
   const [lastPrediction, setLastPrediction] = useState<Prediction | null>(null);
@@ -75,12 +75,12 @@ export function useFrameCapture(
       const t0 = performance.now();
       pendingRef.current += 1;
 
-      predictFrame(dataUrl, undefined, mode)
+      predictFrame(dataUrl, undefined, mode, detectionMode)
         .then((prediction) => {
           if (!prediction) return;
           if ((prediction.hand_count ?? 0) > 1) return;
 
-          if (prediction.is_word_sign && !fingerspell) {
+          if (prediction.is_word_sign) {
               builder.sentence += prediction.label + " ";
               setLastPrediction(prediction);
               setSentence(builder.sentence);
@@ -98,12 +98,21 @@ export function useFrameCapture(
               setSentence((prev) => prev === builder.sentence ? prev : builder.sentence);
           }
 
-          const elapsed = performance.now() - t0;
-          const times   = fpsTimesRef.current;
-          times.push(elapsed);
-          if (times.length > 10) times.shift();
-          const avg = times.reduce((a, b) => a + b, 0) / times.length;
-          setLiveFps(avg > 0 ? 1000 / avg : 0);
+      const elapsed = performance.now() - t0;
+      const times   = fpsTimesRef.current;
+      times.push(elapsed);
+      if (times.length > 10) times.shift();
+      const avg = times.reduce((a, b) => a + b, 0) / times.length;
+      setLiveFps(avg > 0 ? 1000 / avg : 0);
+
+      // Adaptive FPS — slow down when connection is slow
+      if (avg > 300 && intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = setInterval(captureAndPredict, Math.round(1000 / 5));
+      } else if (avg < 100 && intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = setInterval(captureAndPredict, Math.round(1000 / 12));
+      }
         })
         .catch(() => {})
         .finally(() => { pendingRef.current = Math.max(0, pendingRef.current - 1); });
@@ -119,7 +128,7 @@ export function useFrameCapture(
         if (wordLockTimer.current) clearTimeout(wordLockTimer.current);
         wordLockRef.current = false;
     };
-  }, [isActive, fps, jpegQuality, mode, fingerspell, videoRef]);
+  }, [isActive, fps, jpegQuality, mode, detectionMode, videoRef]);
 
   return { sentence, lastPrediction, fps: liveFps, clearSentence, backspace, appendSpace };
 }

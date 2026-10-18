@@ -6,6 +6,7 @@ import {
 } from "../styles/pages/RecordingPreview.styles";
 import { type RecordingMeta } from "../lib/recordingsClient";
 import { sanitizeFilename } from "../hooks/useVideoRecorder";
+import { CustomVideoPlayer, customPlayerCss } from "../components/CustomVideoPlayer";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -46,6 +47,7 @@ export function RecordingPlaybackModal({
   return (
     <div style={s.backdrop} role="dialog" aria-modal="true" aria-labelledby="asl-playback-title">
       <style>{css}</style>
+      <style>{customPlayerCss}</style>
       <div style={s.card} className="asl-modal-card">
         <div style={{ ...s.header, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
@@ -73,13 +75,11 @@ export function RecordingPlaybackModal({
 
         <div style={s.videoWrap}>
           {videoSrc && (
-            <video
+            <CustomVideoPlayer
               key={videoSrc}
               src={videoSrc}
-              style={s.video}
-              controls
-              playsInline
               autoPlay
+              borderRadius={12}
             />
           )}
         </div>

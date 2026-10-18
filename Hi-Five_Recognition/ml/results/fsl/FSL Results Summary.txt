@@ -1,0 +1,19 @@
+FSL TCN — FINAL RESULTS SUMMARY
+==================================================
+  Dataset                   FSL-105
+  Number of Classes         105
+  Train Sequences           1704
+  Test Sequences            426
+  Feature Dimension         302
+  Sequence Length           64 frames
+  Model                     TCN (4 blocks: 64→128→128→256)
+  Parameters                602,281
+  Best Epoch                106
+  Test Accuracy             98.59%
+  Macro Precision           98.98%
+  Macro Recall              98.57%
+  Macro F1                  98.56%
+  Best Class Accuracy       100.0%
+  Worst Class Accuracy      50.0%
+  Classes at 100%           100
+  Classes below 50%         0

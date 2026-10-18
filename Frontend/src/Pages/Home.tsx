@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from "../assets/Hi-five.png";
 import { homeCss as css, homeStyles as s } from "../styles/pages/Home.styles";
-import { Home as HomeIcon, ListVideo, LogOut, Menu, PlusCircle, Settings, Sparkles, Square, Video, X, Eraser, Maximize2, Minimize2 } from "lucide-react";
+import { Home as HomeIcon, ListVideo, LogOut, Menu, PlusCircle, Settings, Sparkles, Square, Video, X, Eraser, Maximize2, Minimize2, HelpCircle } from "lucide-react";
 import { getData } from '../context/userContext';
 import { useFrameCapture } from '../hooks/useFrameCapture';
 import { useVideoRecorder } from '../hooks/useVideoRecorder';
@@ -11,8 +11,10 @@ import { uploadRecording } from '../lib/recordingsClient';
 import { useToast } from '../components/Toast';
 import ASLOverlay from "../components/AslOverlay";
 import { type SignMode } from '../lib/aslClient';
+import OnboardingModal from '../components/OnboardingModal';
 
 type NavItem = 'home' | 'record' | 'library' | 'settings';
+type DetectionMode = 'alphabet' | 'words';
 
 function Home() {
   const navigate = useNavigate();
@@ -29,8 +31,10 @@ function Home() {
   const [pendingSentence, setPendingSentence] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
-  const [signMode, setSignMode] = useState<SignMode>('both');
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  const [signMode, setSignMode] = useState<SignMode>('fsl');
+  const [detectionMode, setDetectionMode] = useState<DetectionMode>('alphabet');
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -46,7 +50,7 @@ function Home() {
     clearSentence,
     backspace,
     appendSpace,
-  } = useFrameCapture(videoRef, isRecording, { fps: 10, mode: signMode });
+  } = useFrameCapture(videoRef, isRecording, { fps: 10, mode: signMode, detectionMode });
 
   const recorder = useVideoRecorder();
 
@@ -201,7 +205,7 @@ function Home() {
     clearSentence();
   }
 
-  
+
 
   function formatTime(s: number) {
     const h = String(Math.floor(s / 3600)).padStart(2, '0');
@@ -231,10 +235,16 @@ function Home() {
       { id: 'settings' as NavItem, label: 'Settings', icon: <Settings size={18} strokeWidth={1.8} /> },
   ];
 
+  // Language toggle only shown in alphabet mode
   const modeOptions: { value: SignMode; label: string }[] = [
     { value: 'asl', label: 'ASL' },
     { value: 'both', label: 'Both' },
     { value: 'fsl', label: 'FSL' },
+  ];
+
+  const detectionOptions: { value: DetectionMode; label: string }[] = [
+    { value: 'alphabet', label: 'Alphabet' },
+    { value: 'words', label: 'Words' },
   ];
 
   return (
@@ -242,26 +252,37 @@ function Home() {
       <style>{css}</style>
 
       <aside style={s.sidebar} className="home-sidebar">
-        <div style={s.sidebarTop} className="home-sidebar-top">
-          <div style={s.mobileTopRow} className="home-mobile-top-row">
+        <div style={{ ...s.sidebarTop, width: '100%' }} className="home-sidebar-top">
+
+          {/* Desktop brand — hidden on mobile */}
+          <div style={s.brand} className="home-brand-desktop">
+            <img src={logo} alt="Hi-Five logo" style={{ width: "60px", height: "90px" }} />
+            <div>
+              <div style={s.brandName}>Hi-Five</div>
+              <div style={s.brandSub}>SIGNING MADE VISIBLE</div>
+            </div>
+          </div>
+
+          {/* Mobile top row: hamburger + logo | avatar — hidden on desktop */}
+          <div style={{ display: 'none', width: '100%' }} className="home-mobile-top-row">
             <div className="home-mobile-left-group">
-              <button type="button" style={s.mobileMenuBtn} className="home-mobile-menu-btn" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
+              <button type="button" className="home-mobile-menu-btn" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
                 <Menu size={20} strokeWidth={2} />
               </button>
-              <div style={s.brand} className="home-brand">
-                <img src={logo} alt="Hi-Five logo" style={{ width: "60px", height: "90px" }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} className="home-brand">
+                <img src={logo} alt="Hi-Five logo" style={{ width: "32px", height: "48px" }} />
                 <div>
-                  <div style={s.brandName}>Hi-Five</div>
-                  <div style={s.brandSub}>SIGNING MADE VISIBLE</div>
+                  <div style={{ ...s.brandName, fontSize: '16px' }}>Hi-Five</div>
+                  <div style={{ ...s.brandSub, fontSize: '8px', whiteSpace: 'nowrap' }}>SIGNING MADE VISIBLE</div>
                 </div>
               </div>
             </div>
-            <div style={s.mobileActions} className="home-mobile-actions">
+            <div className="home-mobile-actions">
               <button type="button" onClick={() => navigate('/settings')} title="Go to Settings" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
                 {picture ? (
-                  <img src={picture} alt="avatar" style={s.avatar} className="home-mobile-avatar" />
+                  <img src={picture} alt="avatar" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #F0D9C8' }} className="home-mobile-avatar" />
                 ) : (
-                  <div style={s.avatarFallback} className="home-mobile-avatar-fallback">
+                  <div style={{ ...s.avatarFallback, width: 40, height: 40 }} className="home-mobile-avatar-fallback">
                     <span style={s.avatarInitial}>{avatarInitial}</span>
                   </div>
                 )}
@@ -280,11 +301,14 @@ function Home() {
         </div>
 
         <div style={s.sidebarBottom} className="home-sidebar-bottom">
+          <button style={s.logoutBtn} className="logout-btn" onClick={() => setShowOnboarding(true)}>
+              <HelpCircle size={18} strokeWidth={1.8} /> Help
+          </button>
           <button style={s.newRecBtn} className="new-rec-btn" onClick={startRecording}>
             <PlusCircle size={18} strokeWidth={1.8} /> New Recording
           </button>
           <button style={s.logoutBtn} className="logout-btn" onClick={logout}>
-            <LogOut size={18} strokeWidth={1.8} /> Logout
+              <LogOut size={18} strokeWidth={1.8} /> Logout
           </button>
         </div>
       </aside>
@@ -306,7 +330,13 @@ function Home() {
           ))}
         </nav>
         <div className="home-mobile-drawer-bottom">
-          <button style={{ ...s.logoutBtn, justifyContent: 'flex-start', padding: '11px 14px' }} className="logout-btn" onClick={logout}>
+          <button style={{ ...s.logoutBtn, justifyContent: 'center', padding: '11px 14px' }} className="logout-btn" onClick={() => setShowOnboarding(true)}>
+            <HelpCircle size={18} strokeWidth={1.8} /> Help
+          </button>
+          <button style={s.newRecBtn} className="new-rec-btn" onClick={() => { handleNavSelect('record'); setMobileMenuOpen(false); }}>
+            <PlusCircle size={18} strokeWidth={1.8} /> New Recording
+          </button>
+          <button style={{ ...s.logoutBtn, justifyContent: 'center', padding: '11px 14px' }} className="logout-btn" onClick={logout}>
             <LogOut size={18} strokeWidth={1.8} /> Logout
           </button>
         </div>
@@ -340,18 +370,38 @@ function Home() {
               <button style={{ ...s.newRecBtn, ...s.mobileNewRecBtnHidden }} className="new-rec-btn home-mobile-new-rec-btn" onClick={startRecording}>
                 <PlusCircle size={18} strokeWidth={1.8} /> New Recording
               </button>
-              <div className="sign-mode-toggle">
-                {modeOptions.map(opt => (
-                  <button
-                    key={opt.value}
-                    className={`sign-mode-btn${signMode === opt.value ? ' active' : ''}`}
-                    onClick={() => setSignMode(opt.value)}
-                    disabled={isRecording}
-                    title={isRecording ? 'Stop recording to change mode' : `Switch to ${opt.label} mode`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+              <div className="sign-mode-toggles">
+                {/* Detection mode: Alphabet vs Words */}
+                <div className="sign-mode-toggle">
+                  {detectionOptions.map(opt => (
+                    <button
+                      key={opt.value}
+                      className={`sign-mode-btn${detectionMode === opt.value ? ' active' : ''}`}
+                      onClick={() => setDetectionMode(opt.value)}
+                      disabled={isRecording}
+                      title={isRecording ? 'Stop recording to change mode' : `Switch to ${opt.label} mode`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Language toggle: only shown in alphabet mode */}
+                {detectionMode === 'alphabet' && (
+                  <div className="sign-mode-toggle sign-mode-toggle--secondary">
+                    {modeOptions.map(opt => (
+                      <button
+                        key={opt.value}
+                        className={`sign-mode-btn sign-mode-btn--sm${signMode === opt.value ? ' active' : ''}`}
+                        onClick={() => setSignMode(opt.value)}
+                        disabled={isRecording}
+                        title={isRecording ? 'Stop recording to change language' : `Switch to ${opt.label}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -420,6 +470,12 @@ function Home() {
       </main>
 
       <RecordingPreviewModal blob={pendingBlob} onKeep={handleKeep} onDiscard={handleDiscard} isSaving={isSaving} uploadProgress={uploadProgress} />
+      {showOnboarding && (
+        <OnboardingModal
+            onClose={() => setShowOnboarding(false)}
+            onComplete={() => setShowOnboarding(false)}
+        />
+    )}
     </div>
   );
 }

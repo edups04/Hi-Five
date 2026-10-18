@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../assets/Hi-five.png';
 import { libraryCss as css, libraryStyles as s } from '../styles/pages/Library.styles';
-import { Check, CirclePlay, Home as HomeIcon, ListVideo, Loader2, LogOut, Menu, PlusCircle, Search, Settings as SettingsIcon, Trash2, Video, X } from 'lucide-react';
+import { Check, CirclePlay, Home as HomeIcon, ListVideo, Loader2, LogOut, Menu, PlusCircle, Search, Settings as SettingsIcon, Trash2, Video, X, HelpCircle } from 'lucide-react';
 import { getData } from '../context/userContext';
 import { listRecordings, renameRecording, deleteRecording, type RecordingMeta } from '../lib/recordingsClient';
 import { formatDuration, formatRelativeDate, recordingCountLabel } from '../lib/formatters';
 import { useToast } from '../components/Toast';
 import { RecordingPlaybackModal } from '../Modals/RecordingPlayback';
+import OnboardingModal from '../components/OnboardingModal';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -17,7 +18,7 @@ function RecordingThumbnail({ id }: { id: string }) {
     return (
         <video
             src={src}
-            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", borderRadius: "10px 10px 0 0" }}
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", borderRadius: 0 }}
             preload="metadata"
             muted
             playsInline
@@ -45,6 +46,7 @@ function Library() {
     const [editingName, setEditingName] = useState('');
     const [savingRename, setSavingRename] = useState(false);
     const editInputRef = useRef<HTMLInputElement>(null);
+    const [showOnboarding, setShowOnboarding] = useState(false);
 
     async function load() {
         setLoading(true);
@@ -129,6 +131,7 @@ function Library() {
     const avatarInitial = String(userName).trim().charAt(0).toUpperCase() || 'G';
     
     function logout() { localStorage.removeItem('accessToken'); localStorage.removeItem('user'); navigate('/auth'); }
+    function showHelp() { setShowOnboarding(true); }
     function goToRecordPage() { navigate('/recording'); setMobileMenuOpen(false); }
     function handleNavSelect(item: NavItem) {
         if (item === 'home') { navigate('/feed'); setMobileMenuOpen(false); return; }
@@ -150,26 +153,41 @@ function Library() {
             <style>{libraryStateCss}</style>
 
             <aside style={s.sidebar} className="home-sidebar">
-                <div style={s.sidebarTop} className="home-sidebar-top">
-                    <div style={s.mobileTopRow} className="home-mobile-top-row">
+                <div style={{ ...s.sidebarTop, width: '100%' }} className="home-sidebar-top">
+
+                    {/* Desktop brand — hidden on mobile */}
+                    <div style={s.brand} className="home-brand-desktop">
+                        <img src={logo} alt="Hi-Five logo" style={{ width: '60px', height: '90px' }} />
+                        <div>
+                            <div style={s.brandName}>Hi-Five</div>
+                            <div style={s.brandSub}>SIGNING MADE VISIBLE</div>
+                        </div>
+                    </div>
+
+                    {/* Mobile top row: hamburger + logo | avatar — hidden on desktop */}
+                    <div style={{ display: 'none', width: '100%' }} className="home-mobile-top-row">
                         <div className="home-mobile-left-group">
-                            <button type="button" style={s.mobileMenuBtn} className="home-mobile-menu-btn" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
+                            <button type="button" className="home-mobile-menu-btn" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
                                 <Menu size={20} strokeWidth={2} />
                             </button>
-                            <div style={s.brand} className="home-brand">
-                                <img src={logo} alt="Hi-Five logo" style={{ width: '60px', height: '90px' }} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} className="home-brand">
+                                <img src={logo} alt="Hi-Five logo" style={{ width: '32px', height: '48px' }} />
                                 <div>
-                                    <div style={s.brandName}>Hi-Five</div>
-                                    <div style={s.brandSub}>SIGNING MADE VISIBLE</div>
+                                    <div style={{ ...s.brandName, fontSize: '16px' }}>Hi-Five</div>
+                                    <div style={{ ...s.brandSub, fontSize: '8px', whiteSpace: 'nowrap' }}>SIGNING MADE VISIBLE</div>
                                 </div>
                             </div>
                         </div>
-                        <div style={s.mobileActions} className="home-mobile-actions">
+                        <div className="home-mobile-actions">
                             <button type="button" onClick={() => navigate('/settings')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                                {picture ? <img src={picture} alt="avatar" style={s.avatar} className="home-mobile-avatar" /> : <div style={s.avatarFallback} className="home-mobile-avatar-fallback"><span style={s.avatarInitial}>{avatarInitial}</span></div>}
+                                {picture
+                                    ? <img src={picture} alt="avatar" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #F0D9C8' }} className="home-mobile-avatar" />
+                                    : <div style={{ ...s.avatarFallback, width: 40, height: 40 }} className="home-mobile-avatar-fallback"><span style={s.avatarInitial}>{avatarInitial}</span></div>
+                                }
                             </button>
                         </div>
                     </div>
+
                     <nav style={s.nav} className="home-nav">
                         {navItems.map(item => (
                             <button key={item.id} style={{ ...s.navItem, ...(activeNav === item.id ? s.navItemActive : {}) }} className="nav-item" onClick={() => handleNavSelect(item.id)}>
@@ -180,8 +198,9 @@ function Library() {
                     </nav>
                 </div>
                 <div style={s.sidebarBottom} className="home-sidebar-bottom">
-                    <button style={s.newRecBtn} className="new-rec-btn" onClick={goToRecordPage}><PlusCircle size={18} strokeWidth={1.8} /> New Recording</button>
-                    <button style={s.logoutBtn} className="logout-btn" onClick={logout}><LogOut size={18} strokeWidth={1.8} /> Logout</button>
+                <button style={s.logoutBtn} className="logout-btn" onClick={() => setShowOnboarding(true)}><HelpCircle size={18} strokeWidth={1.8} /> Help</button>
+                <button style={s.newRecBtn} className="new-rec-btn" onClick={goToRecordPage}><PlusCircle size={18} strokeWidth={1.8} /> New Recording</button>
+                <button style={s.logoutBtn} className="logout-btn" onClick={logout}><LogOut size={18} strokeWidth={1.8} /> Logout</button>
                 </div>
             </aside>
 
@@ -200,7 +219,9 @@ function Library() {
                     ))}
                 </nav>
                 <div className="home-mobile-drawer-bottom">
-                    <button style={{ ...s.logoutBtn, justifyContent: 'flex-start', padding: '11px 14px' }} className="logout-btn" onClick={logout}><LogOut size={18} strokeWidth={1.8} /> Logout</button>
+                    <button style={{ ...s.logoutBtn, justifyContent: 'center', padding: '11px 14px' }} className="logout-btn" onClick={() => setShowOnboarding(true)}><HelpCircle size={18} strokeWidth={1.8} /> Help</button>
+                    <button style={s.newRecBtn} className="new-rec-btn" onClick={() => { navigate('/home'); setMobileMenuOpen(false); }}><PlusCircle size={18} strokeWidth={1.8} /> New Recording</button>
+                    <button style={{ ...s.logoutBtn, justifyContent: 'center', padding: '11px 14px' }} className="logout-btn" onClick={logout}><LogOut size={18} strokeWidth={1.8} /> Logout</button>
                 </div>
             </aside>
 
@@ -243,10 +264,10 @@ function Library() {
                                     const isEditing = editingId === item.id;
                                     return (
                                         <article style={s.recordCard} className="home-record-card" key={item.id}>
-                                            <div style={{ ...s.recordPreview, position: "relative", overflow: "hidden", padding: 0 }} className={`home-record-preview ${idx === 0 ? 'home-record-preview-first' : ''}`}>
+                                            <div style={s.recordPreview} className={`home-record-preview ${idx === 0 ? 'home-record-preview-first' : ''}`}>
                                                 <RecordingThumbnail id={item.id} />
-                                                <span style={{ ...s.durationPill, position: "absolute", bottom: 8, left: 8, zIndex: 2 }}>{formatDuration(item.durationMs)}</span>
-                                                <button style={{ ...s.deleteBtn, position: "absolute", top: 8, right: 8, zIndex: 2 }} className="home-delete-btn" aria-label="Delete recording" onClick={() => handleDelete(item)}>
+                                                <span style={s.durationPill}>{formatDuration(item.durationMs)}</span>
+                                                <button style={s.deleteBtn} className="home-delete-btn" aria-label="Delete recording" onClick={() => handleDelete(item)}>
                                                     <Trash2 size={18} strokeWidth={2} />
                                                 </button>
                                             </div>
@@ -316,6 +337,12 @@ function Library() {
                         </div>
                     </div>
                 </div>
+            )}
+            {showOnboarding && (
+                <OnboardingModal
+                    onClose={() => setShowOnboarding(false)}
+                    onComplete={() => setShowOnboarding(false)}
+                />
             )}
         </div>
     );

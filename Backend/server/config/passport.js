@@ -17,13 +17,23 @@ passport.use(new GoogleStrategy({
 
             if (user) {
                 if (user.deactivated === true) {
-                    return cb(null, false, { message: 'deactivated' });
+                    await UsersModel.findByIdAndUpdate(user._id, {
+                        email: `deactivated_${user._id}@deactivated`
+                    });
+                    user = await UsersModel.create({
+                        googleId: profile.id,
+                        username: profile.displayName,
+                        email,
+                        avatar: profile.photos[0].value,
+                        isVerified: true,
+                    });
+                } else {
+                    user.googleId = profile.id;
+                    user.isLoggedIn = true;
+                    user.avatar = user.avatar || profile.photos[0].value;
+                    user.isVerified = true;
+                    await user.save();
                 }
-                user.googleId = profile.id;
-                user.isLoggedIn = true;
-                user.avatar = user.avatar || profile.photos[0].value;
-                user.isVerified = true;
-                await user.save();
             } else {
                 user = await UsersModel.create({
                     googleId: profile.id,

@@ -1,15 +1,69 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home as HomeIcon, Video, ListVideo, Settings, PlusCircle, LogOut, X, Bell, LayoutGrid, List, Search, ThumbsUp } from 'lucide-react';
+import { Home as HomeIcon, Video, ListVideo, Settings, PlusCircle, LogOut, X, Bell, LayoutGrid, List, Search, HelpCircle, Menu } from 'lucide-react';
 import logo from '../assets/Hi-five.png';
 import { getData } from '../context/userContext';
 import { getFeed, listRecordings, publishRecording, videoUrl, type FeedRecording, type RecordingMeta } from '../lib/recordingsClient';
 import { formatRelativeDate, formatDuration } from '../lib/formatters';
 import OnboardingModal from '../components/OnboardingModal';
 
+function useLazyVideo() {
+    const ref = useRef<HTMLDivElement>(null);
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+            { rootMargin: '200px' }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
+    return { ref, visible };
+}
+
 type NavItem = 'home' | 'record' | 'library' | 'settings';
 
-const FILTERS = ['All Feed', 'Greetings', 'Basic Signs', 'Numbers', 'Emotions', 'Emergency Signs'];
+type SortOption = { value: string; label: string };
+const SORT_OPTIONS: SortOption[] = [
+    { value: 'latest',      label: 'Latest' },
+    { value: 'oldest',      label: 'Oldest' },
+    { value: 'alpha-asc',   label: 'A → Z' },
+    { value: 'alpha-desc',  label: 'Z → A' },
+    { value: 'most-viewed', label: 'Most Viewed' },
+    { value: 'most-liked',  label: 'Most Liked' },
+];
+
+function SkeletonCard({ listView }: { listView: boolean }) {
+    if (listView) {
+        return (
+            <div style={{ display: 'flex', gap: 14, padding: '0 0 12px', alignItems: 'flex-start' }}>
+                <div className="skeleton feed-list-thumb" style={{ aspectRatio: '16/9', borderRadius: 10, flexShrink: 0 }} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 4 }}>
+                    <div className="skeleton" style={{ height: 15, borderRadius: 6, width: '85%' }} />
+                    <div className="skeleton" style={{ height: 13, borderRadius: 6, width: '55%' }} />
+                    <div className="skeleton" style={{ height: 12, borderRadius: 6, width: '65%' }} />
+                </div>
+            </div>
+        );
+    }
+    return (
+        <div style={{ background: 'transparent' }}>
+            <div className="skeleton" style={{ width: '100%', aspectRatio: '16/9', borderRadius: 10 }} />
+            <div style={{ padding: '10px 4px 14px', display: 'flex', gap: 10 }}>
+                <div className="skeleton" style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0 }} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div className="skeleton" style={{ height: 14, borderRadius: 6, width: '90%' }} />
+                    <div className="skeleton" style={{ height: 12, borderRadius: 6, width: '55%' }} />
+                    <div className="skeleton" style={{ height: 11, borderRadius: 6, width: '65%' }} />
+                </div>
+            </div>
+        </div>
+    );
+}
 
 function UserAvatar({ username, avatar, size = 36 }: { username: string; avatar: string | null; size?: number }) {
     if (avatar) return <img src={avatar} alt={username} style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />;
@@ -25,46 +79,36 @@ function UserAvatar({ username, avatar, size = 36 }: { username: string; avatar:
 
 function VideoCard({ recording, onClick, listView }: { recording: FeedRecording; onClick: () => void; listView: boolean }) {
     const src = videoUrl(recording.id);
+    const { ref, visible } = useLazyVideo();
 
     if (listView) {
         return (
-            <div onClick={onClick} style={{ display: 'flex', gap: 16, background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid #F0D9C8', cursor: 'pointer', padding: 12, alignItems: 'center', transition: 'box-shadow 0.15s ease' }} className="feed-card">
-                <div style={{ position: 'relative', width: 160, height: 90, flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#1d2735' }}>
-                    <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} preload="metadata" muted playsInline onLoadedMetadata={e => { (e.target as HTMLVideoElement).currentTime = 1; }} />
-                    <span style={{ position: 'absolute', bottom: 6, right: 6, background: '#92400E', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 6 }}>{formatDuration(recording.durationMs)}</span>
+            <div onClick={onClick} style={{ display: 'flex', gap: 14, cursor: 'pointer', padding: '0 0 12px' }} className="feed-card-list">
+                <div ref={ref} className="feed-list-thumb" style={{ position: 'relative', aspectRatio: '16/9', flexShrink: 0, borderRadius: 10, overflow: 'hidden', background: '#1d2735' }}>
+                    {visible && <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} preload="metadata" muted playsInline onLoadedMetadata={e => { (e.target as HTMLVideoElement).currentTime = 1; }} />}
+                    <span style={{ position: 'absolute', bottom: 5, right: 6, background: 'rgba(0,0,0,0.78)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>{formatDuration(recording.durationMs)}</span>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 800, color: '#3B1A00', fontFamily: "'Manrope', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{recording.name}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <UserAvatar username={recording.uploader.username} avatar={recording.uploader.avatar} size={22} />
-                        <span style={{ fontSize: 13, color: '#9B7355', fontFamily: "'Manrope', sans-serif", fontWeight: 600 }}>{recording.uploader.username}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                        <span style={{ fontSize: 12, color: '#C8A882', fontFamily: "'Manrope', sans-serif" }}>{recording.views} views</span>
-                        <span style={{ fontSize: 12, color: '#C8A882' }}>·</span>
-                        <span style={{ fontSize: 12, color: '#C8A882', fontFamily: "'Manrope', sans-serif" }}>{formatRelativeDate(recording.createdAt)}</span>
-                        <span style={{ fontSize: 12, color: '#C8A882' }}>·</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#C8A882', fontFamily: "'Manrope', sans-serif" }}><ThumbsUp size={12} strokeWidth={2} /> {recording.likes.length}</span>
-                    </div>
+                <div style={{ flex: 1, minWidth: 0, paddingTop: 4 }}>
+                    <h3 style={{ margin: '0 0 5px', fontSize: 14, fontWeight: 700, color: '#0f0f0f', fontFamily: "'Manrope', sans-serif", lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{recording.name}</h3>
+                    <p style={{ margin: '0 0 3px', fontSize: 12, color: '#606060', fontFamily: "'Manrope', sans-serif", fontWeight: 500 }}>{recording.uploader.username}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: '#606060', fontFamily: "'Manrope', sans-serif" }}>{recording.views} views · {formatRelativeDate(recording.createdAt)}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div onClick={onClick} style={{ background: '#fff', borderRadius: 16, overflow: 'hidden', border: '1px solid #F0D9C8', cursor: 'pointer', transition: 'box-shadow 0.15s ease, transform 0.15s ease' }} className="feed-card">
-            <div style={{ position: 'relative', height: 180, background: '#1d2735', overflow: 'hidden' }}>
-                <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} preload="metadata" muted playsInline onLoadedMetadata={e => { (e.target as HTMLVideoElement).currentTime = 1; }} />
-                <span style={{ position: 'absolute', bottom: 8, right: 8, background: '#92400E', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6 }}>{formatDuration(recording.durationMs)}</span>
+        <div onClick={onClick} style={{ background: 'transparent', cursor: 'pointer' }} className="feed-card">
+            <div ref={ref} style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 10, overflow: 'hidden', background: '#1d2735' }}>
+                {visible && <video src={src} style={{ width: '100%', height: '100%', objectFit: 'cover' }} preload="metadata" muted playsInline onLoadedMetadata={e => { (e.target as HTMLVideoElement).currentTime = 1; }} />}
+                <span style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(0,0,0,0.78)', color: '#fff', fontSize: 11, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>{formatDuration(recording.durationMs)}</span>
             </div>
-            <div style={{ padding: '12px 14px 14px' }}>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                    <UserAvatar username={recording.uploader.username} avatar={recording.uploader.avatar} size={36} />
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                        <h3 style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 800, color: '#3B1A00', fontFamily: "'Manrope', sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{recording.name}</h3>
-                        <p style={{ margin: '0 0 2px', fontSize: 12, color: '#9B7355', fontFamily: "'Manrope', sans-serif", fontWeight: 600 }}>{recording.uploader.username}</p>
-                        <p style={{ margin: 0, fontSize: 11, color: '#C8A882', fontFamily: "'Manrope', sans-serif" }}>{recording.views} views · {formatRelativeDate(recording.createdAt)}</p>
-                    </div>
+            <div style={{ padding: '10px 4px 4px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <UserAvatar username={recording.uploader.username} avatar={recording.uploader.avatar} size={36} />
+                <div style={{ minWidth: 0, flex: 1 }}>
+                    <h3 style={{ margin: '0 0 3px', fontSize: 14, fontWeight: 700, color: '#0f0f0f', fontFamily: "'Manrope', sans-serif", lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{recording.name}</h3>
+                    <p style={{ margin: '0 0 1px', fontSize: 12, color: '#606060', fontFamily: "'Manrope', sans-serif", fontWeight: 500 }}>{recording.uploader.username}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: '#606060', fontFamily: "'Manrope', sans-serif" }}>{recording.views} views · {formatRelativeDate(recording.createdAt)}</p>
                 </div>
             </div>
         </div>
@@ -106,9 +150,7 @@ function PublishModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
                     <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#3B1A00' }}>Upload to Feed</h2>
                     <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9B7355', padding: 4 }}><X size={20} strokeWidth={2} /></button>
                 </div>
-
                 <p style={{ margin: '0 0 14px', fontSize: 13, color: '#9B7355', fontWeight: 600 }}>Select a recording from your library to make public:</p>
-
                 <div style={{ flex: 1, overflowY: 'auto', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {loading ? (
                         <p style={{ color: '#9B7355', fontSize: 13 }}>Loading your recordings...</p>
@@ -121,23 +163,13 @@ function PublishModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
                         </div>
                     ))}
                 </div>
-
                 {selected && (
                     <div style={{ marginBottom: 16 }}>
                         <label style={{ fontSize: 11, fontWeight: 700, color: '#9B7355', letterSpacing: '0.06em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>Description (optional)</label>
-                        <textarea
-                            value={description}
-                            onChange={e => setDescription(e.target.value)}
-                            placeholder="Describe your signing video..."
-                            maxLength={2000}
-                            rows={3}
-                            style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #F0D9C8', background: '#FAF0E8', fontSize: 13, fontFamily: "'Manrope', sans-serif", color: '#3B1A00', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
-                        />
+                        <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Describe your signing video..." maxLength={2000} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #F0D9C8', background: '#FAF0E8', fontSize: 13, fontFamily: "'Manrope', sans-serif", color: '#3B1A00', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                 )}
-
                 {error && <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: '#dc2626' }}>{error}</p>}
-
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                     <button onClick={onClose} style={{ padding: '10px 20px', borderRadius: 50, border: '1px solid #E7C9B6', background: '#fff0e7', color: '#9B7355', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'Manrope', sans-serif" }}>Cancel</button>
                     <button onClick={handlePublish} disabled={!selected || publishing} style={{ padding: '10px 20px', borderRadius: 50, border: 'none', background: selected ? '#92400E' : '#F0D9C8', color: '#fff', fontWeight: 700, fontSize: 13, cursor: selected ? 'pointer' : 'not-allowed', fontFamily: "'Manrope', sans-serif", opacity: publishing ? 0.7 : 1 }}>
@@ -152,14 +184,14 @@ function PublishModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: 
 export default function FeedPage() {
     const navigate = useNavigate();
     const { user } = getData();
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [showOnboarding, setShowOnboarding] = useState(false);
-    const [activeFilter, setActiveFilter] = useState('All Feed');
+    const [sortBy, setSortBy] = useState('latest');
     const [listView, setListView] = useState(false);
     const [search, setSearch] = useState('');
     const [recordings, setRecordings] = useState<FeedRecording[]>([]);
     const [loading, setLoading] = useState(true);
     const [showPublish, setShowPublish] = useState(false);
+    const [drawerOpen, setDrawerOpen] = useState(false);
 
     const userRaw = localStorage.getItem('user');
     let userObj: any = null;
@@ -184,81 +216,172 @@ export default function FeedPage() {
         try {
             const raw = localStorage.getItem('user');
             const u = raw ? JSON.parse(raw) : null;
-            if (u && !u.hasSeenOnboarding) {
-                setShowOnboarding(true);
-            }
+            if (u && !u.hasSeenOnboarding) setShowOnboarding(true);
         } catch {}
     }, []);
 
-    const filtered = recordings.filter(r =>
-        !search.trim() || r.name.toLowerCase().includes(search.toLowerCase()) || r.uploader.username.toLowerCase().includes(search.toLowerCase())
-    );
+    const filtered = [...recordings]
+        .filter(r => !search.trim() || r.name.toLowerCase().includes(search.toLowerCase()) || r.uploader.username.toLowerCase().includes(search.toLowerCase()))
+        .sort((a, b) => {
+            switch (sortBy) {
+                case 'oldest':      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                case 'alpha-asc':   return a.name.localeCompare(b.name);
+                case 'alpha-desc':  return b.name.localeCompare(a.name);
+                case 'most-viewed': return (b.views ?? 0) - (a.views ?? 0);
+                case 'most-liked':  return (b.likes?.length ?? 0) - (a.likes?.length ?? 0);
+                default:            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            }
+        });
 
     const navItems = [
-        { id: 'home' as NavItem, label: 'Home', icon: <HomeIcon size={18} strokeWidth={1.8} />, path: '/feed' },
-        { id: 'record' as NavItem, label: 'Recording', icon: <Video size={18} strokeWidth={1.8} />, path: '/recording' },
-        { id: 'library' as NavItem, label: 'Library', icon: <ListVideo size={18} strokeWidth={1.8} />, path: '/library' },
-        { id: 'settings' as NavItem, label: 'Settings', icon: <Settings size={18} strokeWidth={1.8} />, path: '/settings' },
+        { id: 'home' as NavItem,     label: 'Home',      icon: <HomeIcon size={18} strokeWidth={1.8} />,  path: '/feed' },
+        { id: 'record' as NavItem,   label: 'Recording', icon: <Video size={18} strokeWidth={1.8} />,     path: '/recording' },
+        { id: 'library' as NavItem,  label: 'Library',   icon: <ListVideo size={18} strokeWidth={1.8} />, path: '/library' },
+        { id: 'settings' as NavItem, label: 'Settings',  icon: <Settings size={18} strokeWidth={1.8} />,  path: '/settings' },
     ];
 
+    function handleNav(path: string) {
+        navigate(path);
+        setDrawerOpen(false);
+    }
+
     return (
-        <div style={{ display: 'flex', height: '100vh', background: '#FAF0E8', fontFamily: "'Manrope', sans-serif", overflow: 'hidden' }}>
+        <div style={{ display: 'flex', height: '100vh', background: '#FAF0E8', fontFamily: "'Manrope', sans-serif", overflow: 'hidden' }} className="feed-root">
             <style>{feedCss}</style>
 
-            <aside style={{ width: 210, flexShrink: 0, background: '#FAF0E8', borderRight: '1px solid #F0D9C8', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '28px 16px 24px' }} className="feed-sidebar">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingLeft: 4 }}>
+            {/* LEFT SIDEBAR */}
+            <aside className="feed-sidebar" style={{ width: 210, flexShrink: 0, background: '#FAF0E8', borderRight: '1px solid #F0D9C8', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '28px 16px 24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 32, width: '100%' }}>
+                    {/* Desktop brand — hidden on mobile */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingLeft: 4 }} className="feed-brand-desktop">
                         <img src={logo} alt="Hi-Five" style={{ width: '60px', height: '90px' }} />
                         <div>
                             <div style={{ fontSize: '18px', fontWeight: 800, color: '#3B1A00', letterSpacing: '-0.01em' }}>Hi-Five</div>
-                            <div style={{ fontSize: '9px', color: '#C2410C', fontWeight: 700, letterSpacing: '0.1em', marginTop: '1px', whiteSpace: 'nowrap' }}>SIGNING MADE VISIBLE</div>
+                            <div style={{ fontSize: '9px', color: '#C2410C', fontWeight: 700, letterSpacing: '0.1em', marginTop: '1px' }}>SIGNING MADE VISIBLE</div>
                         </div>
                     </div>
-                    <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+
+                    {/* Mobile top row: hamburger + logo | avatar — hidden on desktop */}
+                    <div className="feed-mobile-top-row" style={{ display: 'none', width: '100%' }}>
+                        <div className="feed-mobile-left-group">
+                            <button
+                                type="button"
+                                className="feed-mobile-menu-btn"
+                                onClick={() => setDrawerOpen(true)}
+                                aria-label="Open menu"
+                            >
+                                <Menu size={20} strokeWidth={2} />
+                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }} className="feed-brand">
+                                <img src={logo} alt="Hi-Five" style={{ width: '32px', height: '48px' }} />
+                                <div>
+                                    <div style={{ fontSize: '16px', fontWeight: 800, color: '#3B1A00', letterSpacing: '-0.01em' }}>Hi-Five</div>
+                                    <div style={{ fontSize: '8px', color: '#C2410C', fontWeight: 700, letterSpacing: '0.1em', marginTop: '1px', whiteSpace: 'nowrap' }}>SIGNING MADE VISIBLE</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="feed-mobile-actions">
+                            <button onClick={() => setShowPublish(true)} style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid #F0D9C8', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#9B7355' }}>
+                                <PlusCircle size={18} strokeWidth={1.8} />
+                            </button>
+                            <button onClick={() => navigate('/settings')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+                                {picture
+                                    ? <img src={picture} alt="avatar" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #F0D9C8' }} className="feed-mobile-avatar" />
+                                    : <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="feed-mobile-avatar-fallback"><span style={{ color: '#fff', fontSize: 15, fontWeight: 800 }}>{avatarInitial}</span></div>
+                                }
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Desktop nav */}
+                    <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }} className="feed-nav">
                         {navItems.map(item => (
-                            <button key={item.id} onClick={() => navigate(item.path)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderRadius: 10, border: 'none', background: item.id === 'home' ? '#F97316' : 'transparent', color: item.id === 'home' ? '#fff' : '#7A4520', fontSize: 15, fontWeight: 600, cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: "'Manrope', sans-serif", transition: 'all 0.15s ease' }} className="feed-nav-item">
+                            <button key={item.id} onClick={() => handleNav(item.path)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderRadius: 10, border: 'none', background: item.id === 'home' ? '#F97316' : 'transparent', color: item.id === 'home' ? '#fff' : '#7A4520', fontSize: 15, fontWeight: 600, cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: "'Manrope', sans-serif", transition: 'all 0.15s ease' }} className="feed-nav-item">
                                 <span style={{ color: item.id === 'home' ? '#fff' : '#C2410C' }}>{item.icon}</span>
                                 {item.label}
                             </button>
                         ))}
                     </nav>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <button onClick={() => navigate('/home')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#92400E', color: '#fff', border: 'none', borderRadius: 50, padding: '13px 16px', fontSize: 14, fontWeight: 700, cursor: 'pointer', width: '100%', fontFamily: "'Manrope', sans-serif" }}>
+
+                {/* Desktop sidebar bottom */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} className="feed-sidebar-bottom">
+                    <button onClick={() => setShowOnboarding(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, 'width': '100%', background: 'transparent', color: '#9B7355', border: 'none', padding: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Manrope', sans-serif" }}>
+                        <HelpCircle size={18} strokeWidth={1.8} /> Help
+                    </button>
+                    <button onClick={() => navigate('/recording')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, 'width': '100%', background: '#92400E', color: '#fff', border: 'none', borderRadius: 50, padding: '13px 16px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Manrope', sans-serif" }}>
                         <PlusCircle size={18} strokeWidth={1.8} /> New Recording
                     </button>
-                    <button onClick={logout} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'transparent', color: '#9B7355', border: 'none', padding: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Manrope', sans-serif" }}>
+                    <button onClick={logout} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, 'width': '100%', background: 'transparent', color: '#9B7355', border: 'none', padding: 10, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Manrope', sans-serif" }}>
                         <LogOut size={18} strokeWidth={1.8} /> Logout
                     </button>
                 </div>
             </aside>
 
-            <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div style={{ padding: '16px 28px', borderBottom: '1px solid #F0D9C8', display: 'flex', alignItems: 'center', gap: 16, background: '#FAF0E8', flexShrink: 0 }}>
+            {/* Mobile overlay */}
+            <div className={`feed-mobile-overlay${drawerOpen ? ' feed-mobile-overlay-open' : ''}`} onClick={() => setDrawerOpen(false)} />
+
+            {/* Mobile slide-in drawer */}
+            <aside className={`feed-mobile-drawer${drawerOpen ? ' feed-mobile-drawer-open' : ''}`}>
+                <div className="feed-mobile-drawer-top">
+                    <button type="button" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 42, height: 42, borderRadius: 10, border: '1px solid #E9CDB7', background: '#fff4ec', color: '#C2410C', cursor: 'pointer' }} onClick={() => setDrawerOpen(false)} aria-label="Close menu">
+                        <X size={20} strokeWidth={2} />
+                    </button>
+                </div>
+                <nav className="feed-mobile-drawer-nav">
+                    {navItems.map(item => (
+                        <button key={`drawer-${item.id}`} onClick={() => handleNav(item.path)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 14px', borderRadius: 10, border: 'none', background: item.id === 'home' ? '#F97316' : 'transparent', color: item.id === 'home' ? '#fff' : '#7A4520', fontSize: 15, fontWeight: 600, cursor: 'pointer', textAlign: 'left', width: '100%', fontFamily: "'Manrope', sans-serif', transition: 'all 0.15s ease" }} className="feed-nav-item">
+                            <span style={{ color: item.id === 'home' ? '#fff' : '#C2410C' }}>{item.icon}</span>
+                            {item.label}
+                        </button>
+                    ))}
+                </nav>
+                <div className="feed-mobile-drawer-bottom">
+                    <button onClick={() => { setShowOnboarding(true); setDrawerOpen(false); }} style={{ display: 'flex', justifyContent: 'center', gap: 8, 'width': '100%', background: 'transparent', color: '#7A4520', border: 'none', padding: '11px 14px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Manrope', sans-serif", borderRadius: 10 }}>
+                        <HelpCircle size={18} strokeWidth={1.8} /> Help
+                    </button>
+                    <button onClick={() => { navigate('/recording'); setDrawerOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: 8, 'width': '100%', background: '#92400E', color: '#fff', border: 'none', borderRadius: 50, padding: '12px 16px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'Manrope', sans-serif", justifyContent: 'center', marginBottom: 8 }}>
+                        <PlusCircle size={18} strokeWidth={1.8} /> New Recording
+                    </button>
+                    <button onClick={logout} style={{ display: 'flex', justifyContent: 'center', gap: 8, 'width': '100%', background: 'transparent', color: '#7A4520', border: 'none', padding: '11px 14px', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: "'Manrope', sans-serif", borderRadius: 10 }}>
+                        <LogOut size={18} strokeWidth={1.8} /> Logout
+                    </button>
+                </div>
+            </aside>
+
+            <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }} className="feed-main">
+                {/* TOP BAR */}
+                <div className="feed-topbar" style={{ padding: '16px 28px', borderBottom: '1px solid #F0D9C8', display: 'flex', alignItems: 'center', gap: 12, background: '#FAF0E8', flexShrink: 0 }}>
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1.5px solid #F0D9C8', borderRadius: 50, padding: '10px 18px' }}>
                         <Search size={16} color="#9B7355" strokeWidth={2} />
-                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search communities, videos, or creators..." style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: '#3B1A00', fontFamily: "'Manrope', sans-serif", background: 'transparent' }} />
+                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search videos or creators..." style={{ flex: 1, border: 'none', outline: 'none', fontSize: 14, color: '#3B1A00', fontFamily: "'Manrope', sans-serif", background: 'transparent', minWidth: 0 }} />
                     </div>
-                    <button style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid #F0D9C8', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#9B7355' }}>
+                    <button style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid #F0D9C8', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#9B7355', flexShrink: 0 }}>
                         <Bell size={18} strokeWidth={1.8} />
                     </button>
-                    <button onClick={() => setShowPublish(true)} style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid #F0D9C8', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#9B7355' }}>
+                    <button onClick={() => setShowPublish(true)} className="feed-topbar-upload-btn" style={{ width: 40, height: 40, borderRadius: '50%', border: '1.5px solid #F0D9C8', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#9B7355', flexShrink: 0 }}>
                         <PlusCircle size={18} strokeWidth={1.8} />
                     </button>
-                    <button onClick={() => navigate('/settings')} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
-                        {picture ? <img src={picture} alt="avatar" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #F0D9C8' }} /> : <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: '#fff', fontSize: 16, fontWeight: 800 }}>{avatarInitial}</span></div>}
+                    <button onClick={() => navigate('/settings')} className="feed-topbar-avatar-btn" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', flexShrink: 0 }}>
+                        {picture
+                            ? <img src={picture} alt="avatar" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid #F0D9C8' }} />
+                            : <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#F97316', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: '#fff', fontSize: 16, fontWeight: 800 }}>{avatarInitial}</span></div>
+                        }
                     </button>
                 </div>
 
-                <div style={{ padding: '14px 28px 10px', borderBottom: '1px solid #F0D9C8', display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
-                    {FILTERS.map(f => (
-                        <button key={f} onClick={() => setActiveFilter(f)} style={{ padding: '8px 18px', borderRadius: 50, border: '1.5px solid', borderColor: activeFilter === f ? '#92400E' : '#E7C9B6', background: activeFilter === f ? '#92400E' : '#fff', color: activeFilter === f ? '#fff' : '#9B7355', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Manrope', sans-serif", transition: 'all 0.15s ease' }}>
-                            {f}
+                {/* SORT BAR */}
+                <div className="feed-sortbar" style={{ padding: '10px 28px', borderBottom: '1px solid #F0D9C8', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, overflowX: 'auto' }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#9B7355', fontFamily: "'Manrope', sans-serif", marginRight: 4, letterSpacing: '0.05em', flexShrink: 0 }}>SORT</span>
+                    {SORT_OPTIONS.map(opt => (
+                        <button key={opt.value} onClick={() => setSortBy(opt.value)} style={{ padding: '7px 16px', borderRadius: 50, border: '1.5px solid', borderColor: sortBy === opt.value ? '#92400E' : '#E7C9B6', background: sortBy === opt.value ? '#92400E' : '#fff', color: sortBy === opt.value ? '#fff' : '#9B7355', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: "'Manrope', sans-serif", transition: 'all 0.15s ease', flexShrink: 0 }}>
+                            {opt.label}
                         </button>
                     ))}
                 </div>
 
-                <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+                {/* CONTENT AREA */}
+                <div className="feed-content" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px 40px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                         <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#3B1A00', fontFamily: "'Manrope', sans-serif" }}>Uploaded Videos</h2>
                         <div style={{ display: 'flex', gap: 4, background: '#fff', border: '1.5px solid #F0D9C8', borderRadius: 10, padding: 4 }}>
@@ -272,7 +395,9 @@ export default function FeedPage() {
                     </div>
 
                     {loading ? (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: '#9B7355', fontSize: 14, fontWeight: 600 }}>Loading feed...</div>
+                        <div className={listView ? 'feed-list' : 'feed-grid'}>
+                            {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} listView={listView} />)}
+                        </div>
                     ) : filtered.length === 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, color: '#9B7355', gap: 8 }}>
                             <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#4B2A14' }}>No videos yet</p>
@@ -280,10 +405,8 @@ export default function FeedPage() {
                             <button onClick={() => setShowPublish(true)} style={{ marginTop: 8, padding: '10px 20px', borderRadius: 50, border: 'none', background: '#92400E', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'Manrope', sans-serif" }}>Upload Video</button>
                         </div>
                     ) : (
-                        <div style={listView ? { display: 'flex', flexDirection: 'column', gap: 12 } : { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }} className="feed-grid">
-                            {filtered.map(r => (
-                                <VideoCard key={r.id} recording={r} listView={listView} onClick={() => navigate(`/video/${r.id}`)} />
-                            ))}
+                        <div className={listView ? 'feed-list' : 'feed-grid'}>
+                            {filtered.map(r => <VideoCard key={r.id} recording={r} listView={listView} onClick={() => navigate(`/video/${r.id}`)} />)}
                         </div>
                     )}
                 </div>
@@ -308,10 +431,7 @@ export default function FeedPage() {
                         try {
                             const raw = localStorage.getItem('user');
                             const u = raw ? JSON.parse(raw) : null;
-                            if (u) {
-                                u.hasSeenOnboarding = true;
-                                localStorage.setItem('user', JSON.stringify(u));
-                            }
+                            if (u) { u.hasSeenOnboarding = true; localStorage.setItem('user', JSON.stringify(u)); }
                         } catch {}
                     }}
                 />
@@ -321,8 +441,79 @@ export default function FeedPage() {
 }
 
 const feedCss = `
-    .feed-card:hover { box-shadow: 0 8px 24px rgba(64,34,12,0.12); transform: translateY(-2px); }
+    .feed-card:hover h3 { color: #92400E !important; }
+    .feed-card-list:hover h3 { color: #92400E !important; }
     .feed-nav-item:hover { background: rgba(249,115,22,0.12) !important; color: #C2410C !important; }
-    @media (max-width: 1100px) { .feed-grid { grid-template-columns: repeat(2, 1fr) !important; } }
-    @media (max-width: 700px) { .feed-grid { grid-template-columns: 1fr !important; } .feed-sidebar { display: none !important; } }
+    .skeleton { background: linear-gradient(90deg, #F0D9C8 25%, #FAF0E8 50%, #F0D9C8 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+    /* Grid — responsive columns */
+    .feed-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px 12px; }
+    .feed-list { display: flex; flex-direction: column; gap: 0; }
+
+    /* List view thumbnail */
+    .feed-list-thumb { width: 240px; }
+
+    /* Scrollable sort bar */
+    .feed-sortbar { scrollbar-width: none; }
+    .feed-sortbar::-webkit-scrollbar { display: none; }
+
+    /* Mobile overlay */
+    .feed-mobile-overlay {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.28);
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.2s ease;
+        z-index: 30;
+    }
+    .feed-mobile-overlay-open { opacity: 1 !important; pointer-events: auto !important; }
+
+    /* Mobile slide-in drawer */
+    .feed-mobile-drawer {
+        position: fixed; top: 0; left: 0; bottom: 0;
+        width: min(78vw, 290px);
+        background: #FAF0E8;
+        border-right: 1px solid #EFD8C7;
+        box-shadow: 8px 0 30px rgba(30,18,10,0.12);
+        transform: translateX(-104%);
+        transition: transform 0.24s ease;
+        z-index: 40;
+        display: flex; flex-direction: column;
+        padding: 16px; gap: 14px;
+    }
+    .feed-mobile-drawer-open { transform: translateX(0) !important; }
+    .feed-mobile-drawer-top { display: flex; justify-content: flex-end; }
+    .feed-mobile-drawer-nav { display: flex; flex-direction: column; gap: 8px; }
+    .feed-mobile-drawer-bottom { margin-top: auto; padding-top: 12px; border-top: 1px solid #efd9c8; display: flex; flex-direction: column; gap: 4px; }
+
+    @media (max-width: 1100px) {
+        .feed-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 900px) {
+        /* Sidebar collapses to a top strip */
+        .feed-root { flex-direction: column !important; height: auto !important; min-height: 100vh !important; overflow: auto !important; }
+        .feed-sidebar { width: 100% !important; border-right: none !important; border-bottom: 1px solid #F0D9C8 !important; padding: 12px 16px !important; flex-direction: row !important; justify-content: unset !important; align-items: center !important; }
+        .feed-brand-desktop { display: none !important; }
+        .feed-mobile-top-row { display: flex !important; align-items: center !important; justify-content: space-between !important; width: 100% !important; }
+        .feed-mobile-left-group { display: flex !important; align-items: center !important; gap: 10px !important; min-width: 0 !important; }
+        .feed-mobile-actions { display: flex !important; align-items: center !important; gap: 10px !important; }
+        .feed-mobile-menu-btn { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 40px !important; height: 40px !important; border-radius: 10px !important; border: 1px solid #E9CDB7 !important; background: #fff4ec !important; color: #C2410C !important; cursor: pointer !important; flex-shrink: 0 !important; }
+        .feed-nav { display: none !important; }
+        .feed-sidebar-bottom { display: none !important; }
+        .feed-main { overflow: visible !important; }
+        .feed-topbar { padding: 12px 16px !important; }
+        .feed-topbar-upload-btn { display: none !important; }
+        .feed-topbar-avatar-btn { display: none !important; }
+        .feed-sortbar { padding: 8px 16px !important; flex-wrap: nowrap !important; }
+        .feed-content { padding: 16px 16px 32px !important; overflow: visible !important; }
+        .feed-grid { grid-template-columns: repeat(2, 1fr); }
+        .feed-list-thumb { width: 140px; }
+    }
+    @media (max-width: 640px) {
+        .feed-grid { grid-template-columns: repeat(1, 1fr); }
+        .feed-list-thumb { width: 120px; }
+    }
+    @media (min-width: 901px) {
+        .feed-mobile-overlay, .feed-mobile-drawer { display: none !important; }
+    }
 `;

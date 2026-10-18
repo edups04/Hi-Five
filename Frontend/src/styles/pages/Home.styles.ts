@@ -20,13 +20,17 @@ export const homeStyles: Record<string, CSSProperties> = {
   },
   sidebarTop: { display: "flex", flexDirection: "column", gap: "32px" },
   mobileTopRow: {
-    display: "block",
+    display: "none",
   },
   mobileActions: {
-    display: "none",
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
   },
   mobileMenuBtn: {
-    display: "none",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   brand: { display: "flex", alignItems: "center", gap: "10px", paddingLeft: "4px" },
   brandName: { fontSize: "18px", fontWeight: 800, color: "#3B1A00", letterSpacing: "-0.01em" },
@@ -168,12 +172,12 @@ export const homeStyles: Record<string, CSSProperties> = {
     display: "flex",
     justifyContent: "center",
     padding: "0 32px",
-    pointerEvents: "none",     
+    pointerEvents: "none",
     zIndex: 10,
   },
   subtitleText: {
     color: "#fff",
-    fontSize: "clamp(24px, 4vw, 44px)",   
+    fontSize: "clamp(24px, 4vw, 44px)",
     fontWeight: 700,
     textAlign: "center",
     margin: 0,
@@ -230,8 +234,8 @@ export const homeStyles: Record<string, CSSProperties> = {
     color: "#F97316",
     fontFamily: "'Manrope', sans-serif",
     lineHeight: 1,
-    letterSpacing: "-0.02em",  
-  }, 
+    letterSpacing: "-0.02em",
+  },
   debugLabelNone: {
     fontSize: "48px",
     fontWeight: 800,
@@ -239,14 +243,14 @@ export const homeStyles: Record<string, CSSProperties> = {
     fontFamily: "'Manrope', sans-serif",
     lineHeight: 1,
     letterSpacing: "-0.02em",
-  },   
+  },
   debugFps: {
     fontSize: "13px",
     color: "rgba(255,255,255,0.5)",
     marginTop: "6px",
     fontFamily: "'Manrope', sans-serif",
     fontWeight: 600,
-  },      
+  },
   debugConfGood: {
     fontSize: "32px",
     fontWeight: 800,
@@ -267,7 +271,7 @@ export const homeStyles: Record<string, CSSProperties> = {
   fsBtn: {
     position: "absolute",
     top: "16px",
-    right: "16px",       
+    right: "16px",
     width: "36px",
     height: "36px",
     display: "inline-flex",
@@ -323,6 +327,9 @@ export const homeCss = `
   .home-camera-wrap:fullscreen video { cursor: default; }
 
   @media (max-width: 900px) {
+    .home-brand-desktop {
+      display: none !important;
+    }
     .home-root {
       flex-direction: column !important;
       height: auto !important;
@@ -333,8 +340,10 @@ export const homeCss = `
       width: 100% !important;
       border-right: none !important;
       border-bottom: 1px solid #F0D9C8 !important;
-      padding: 16px !important;
-      gap: 14px !important;
+      padding: 12px 16px !important;
+      flex-direction: row !important;
+      justify-content: unset !important;
+      align-items: center !important;
     }
     .home-sidebar-top {
       gap: 14px !important;
@@ -343,7 +352,7 @@ export const homeCss = `
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
-      gap: 10px !important;
+      width: 100% !important;
     }
     .home-mobile-left-group {
       display: flex !important;
@@ -354,10 +363,6 @@ export const homeCss = `
     .home-mobile-left-group .home-brand {
       min-width: 0 !important;
     }
-    .home-brand img {
-      width: 58px !important;
-      height: 62px !important;
-    }
     .home-mobile-actions {
       display: flex !important;
       align-items: center !important;
@@ -365,8 +370,8 @@ export const homeCss = `
     }
     .home-mobile-avatar,
     .home-mobile-avatar-fallback {
-      width: 46px !important;
-      height: 46px !important;
+      width: 40px !important;
+      height: 40px !important;
     }
     .home-mobile-menu-btn {
       display: inline-flex !important;
@@ -465,10 +470,13 @@ export const homeCss = `
       margin-top: auto !important;
       padding-top: 12px !important;
       border-top: 1px solid #efd9c8 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 4px !important;
     }
     .home-mobile-drawer-bottom .logout-btn {
       width: 100% !important;
-      justify-content: flex-start !important;
+      justify-content: center !important;
       color: #7A4520 !important;
       border-radius: 10px !important;
       background: transparent !important;
@@ -503,6 +511,25 @@ export const homeCss = `
     }
   }
 
+  /* ── Toggle row ─────────────────────────────────────────────────────────── */
+  .sign-mode-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Groups the two pill toggles together on the right */
+  .sign-mode-toggles {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* Shared pill container */
   .sign-mode-toggle {
     display: inline-flex;
     align-items: center;
@@ -511,6 +538,13 @@ export const homeCss = `
     padding: 3px;
     gap: 2px;
   }
+
+  /* Secondary (language) toggle is slightly more muted */
+  .sign-mode-toggle--secondary {
+    background: #EDD5C0;
+  }
+
+  /* Shared button styles */
   .sign-mode-btn {
     padding: 6px 16px;
     border-radius: 50px;
@@ -535,14 +569,13 @@ export const homeCss = `
     opacity: 0.5;
     cursor: not-allowed;
   }
-  .sign-mode-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-    gap: 12px;
-    flex-wrap: wrap;
+
+  /* Smaller variant for the secondary language toggle */
+  .sign-mode-btn--sm {
+    padding: 5px 12px;
+    font-size: 12px;
   }
+
   @media (max-width: 900px) {
     .sign-mode-row {
       margin-bottom: 10px;
@@ -550,6 +583,10 @@ export const homeCss = `
     .sign-mode-btn {
       padding: 5px 12px;
       font-size: 12px;
+    }
+    .sign-mode-btn--sm {
+      padding: 4px 10px;
+      font-size: 11px;
     }
   }
 

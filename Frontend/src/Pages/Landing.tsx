@@ -1,17 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import logo from "../assets/Hi-five.png";
 import { useNavigate } from "react-router-dom";
-import { Accessibility, Bolt, Sparkles, Camera, CameraOff } from "lucide-react";
+import { Hand, Bolt, Sparkles, Camera, CameraOff } from "lucide-react";
 import { landingCss as css, landingStyles as s } from "../styles/pages/Landing.styles";
 
 const ML_URL = (import.meta.env.VITE_ASL_API_URL as string | undefined) ?? "http://localhost:3001";
-
-const STATS = [
-    { value: "240K+", label: "ACTIVE LEARNERS" },
-    { value: "1.2K",  label: "CERTIFIED MENTORS" },
-    { value: "8M+",   label: "VIDEOS UPLOADED" },
-    { value: "142",   label: "COUNTRIES" },
-];
 
 const STEPS = [
     { num: 1, title: "Record",    desc: "Position your camera. Our system detects sign language automatically with a simple high-five gesture to start." },
@@ -21,7 +14,7 @@ const STEPS = [
 
 const FEATURES = [
     { icon: Bolt,          title: "Instant",    desc: "Low-latency signing to text conversion." },
-    { icon: Accessibility, title: "Accessible", desc: "Designed for and with the ASL community." },
+    { icon: Hand,          title: "Accessible", desc: "Designed for and with the ASL community." },
     { icon: Sparkles,      title: "Smart",      desc: "Learns your specific signing style over time." },
 ];
 
@@ -173,13 +166,11 @@ export default function HiFiveLanding() {
     const featuresRef = useRef<HTMLElement>(null);
     const howRef      = useRef<HTMLElement>(null);
     const demoRef     = useRef<HTMLElement>(null);
-    const statsRef    = useRef<HTMLElement>(null);
     const ctaRef      = useRef<HTMLElement>(null);
 
     const featuresInView = useInView(featuresRef);
     const howInView      = useInView(howRef);
     const demoInView     = useInView(demoRef);
-    const statsInView    = useInView(statsRef);
     const ctaInView      = useInView(ctaRef);
 
     function scrollTo(ref: React.RefObject<HTMLElement | null>) {
@@ -202,7 +193,6 @@ export default function HiFiveLanding() {
                     <button onClick={() => scrollTo(featuresRef)} style={s.navLink} className="nav-link">Features</button>
                     <button onClick={() => scrollTo(demoRef)}     style={s.navLink} className="nav-link">Try Live</button>
                     <button onClick={() => navigate('/auth')}     style={s.navTryBtn} className="try-btn">Try It Out</button>
-                    <div style={s.navAvatar}>G</div>
                 </div>
                 <button className="mobile-menu-btn" onClick={() => setMenuOpen(m => !m)} style={s.mobileMenuBtn}>☰</button>
             </nav>
@@ -293,21 +283,6 @@ export default function HiFiveLanding() {
                 </div>
             </section>
 
-            {/* STATS */}
-            <section ref={statsRef} style={s.statsSection} className={statsInView ? 'section-visible' : 'section-hidden'}>
-                <div style={s.statsInner}>
-                    <div style={s.statsVideoPlaceholder} className="stats-video-placeholder" />
-                    <div style={s.statsGrid}>
-                        {STATS.map(stat => (
-                            <div key={stat.label} style={s.statCard}>
-                                <div style={s.statValue}>{stat.value}</div>
-                                <div style={s.statLabel}>{stat.label}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
             {/* CTA */}
             <section ref={ctaRef} style={s.ctaSection} className={ctaInView ? 'section-visible' : 'section-hidden'}>
                 <div style={s.ctaInner}>
@@ -316,7 +291,7 @@ export default function HiFiveLanding() {
                         <p style={s.ctaSubtext}>Join now</p>
                         <div style={s.ctaButtons}>
                             <button onClick={() => navigate('/auth')} style={s.ctaPrimary} className="hero-cta">Create Free Account</button>
-                            <button onClick={() => scrollTo(demoRef)} style={s.ctaSecondary} className="hero-secondary">Learn More</button>
+                            <button onClick={() => scrollTo(demoRef)} style={s.ctaSecondary} className="hero-secondary">Try It Out</button>
                         </div>
                     </div>
                 </div>
@@ -331,7 +306,7 @@ export default function HiFiveLanding() {
                                 <img src={logo} alt="Hi-Five" style={{ width: 28, height: 38 }} />
                                 <span style={s.footerBrandName}>Hi-Five</span>
                             </div>
-                            <p style={s.footerTagline}>Empowering the ASL community.</p>
+                            <p style={s.footerTagline}>Empowering the deaf community.</p>
                         </div>
                         {[
                             { label: 'Product',  links: ['Features', 'How it Works', 'Try It Out'] },

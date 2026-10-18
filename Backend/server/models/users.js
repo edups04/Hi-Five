@@ -19,7 +19,12 @@ const UserSchema = new mongoose.Schema({
     deactivationRequestedAt: { type: Date, default: null },
     loginAttempts: { type: Number, default: 0 },
     lockedUntil: { type: Date, default: null },
+    role: { type: String, default: 'user' },
 }, { timestamps: true });
+
+UserSchema.index({ role: 1 });
+UserSchema.index({ deactivated: 1 });
+UserSchema.index({ lockedUntil: 1 });
 
 const UsersModel = mongoose.model('Users', UserSchema);
 module.exports = UsersModel;

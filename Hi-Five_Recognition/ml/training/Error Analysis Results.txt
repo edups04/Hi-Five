@@ -1,0 +1,124 @@
+=================================================================
+  ASL TCN Error Analysis
+=================================================================
+
+[info] Running inference on test set...
+
+[1] Building full confusion matrix...
+  Saved → data\ASL-Citizen\error_analysis\confusion_matrix.csv
+
+[2] Per-class error breakdown...
+
+  #     Gloss                        Acc  Top Errors
+  -----------------------------------------------------------------
+  55    HUNGRY                     33.3%  WISH(8)
+  36    DRAG1                      35.3%  HOSPITAL1(2) | SPAIN(2) | FINE1(1)
+  83    RUN1                       41.7%  GIFT(3) | ANNOUNCE(3) | EDIT1(1)
+  62    LUNCH1                     42.9%  SSHH(3) | NOON1(3) | BREAKFAST1(1)
+  98    TYPE1                      50.0%  INTEREST(2) | DEGREE(2) | RUN1(1)
+  68    MOVIE1                     52.9%  FOREIGNER1(3) | SOCIALIZE(1) | FILM(1)
+  70    NIGHT1                     52.9%  ACCESS(3) | SHAVE1(2) | LATER(1)
+  56    HURDLE/TRIP1               53.8%  MECHANIC1(2) | DIFFERENT(2) | PRACTICE(1)
+  103   WISH                       53.8%  HUNGRY(5) | VOTE(1)
+  95    THIRD1                     57.1%  CATHOLIC(2) | ONLYONE(1) | TWINS1(1)
+  42    EXAMPLE                    58.3%  DEMAND1(4) | NEAR(1)
+  58    KITCHEN                    58.3%  ADMIT(2) | SECRETARY(2) | UPSET1(1)
+  67    MIRROR                     58.3%  BEE1(3) | LETTUCE1(1) | NOON1(1)
+  92    SSHH                       58.3%  DEAF1(2) | PATIENT2(1) | LUNCH1(1)
+  104   WRISTWATCH1                58.3%  CONFUSED1(2) | GIFT(1) | MOVIE1(1)
+  22    CHRISTMAS1                 58.8%  DEMAND1(2) | 5DOLLARS(2) | NOON1(1)
+  33    DOG1                       58.8%  ALITTLEBIT(2) | 5DOLLARS(1) | TUESDAY(1)
+  24    CONFUSED1                  60.0%  BELIEVE1(4) | BEE1(1) | AXE1(1)
+  26    DEAF1                      60.0%  SSHH(3) | LATER(1) | BELIEVE1(1)
+  32    DINNER1                    60.0%  NIGHT1(1) | DOG1(1) | TUESDAY(1)
+
+  Saved → data\ASL-Citizen\error_analysis\per_class_breakdown.csv
+
+[3] Confused pair analysis...
+
+   Count   Error%  True Label                Predicted As             
+  --------------------------------------------------------------------
+       8    66.7%  HUNGRY                    WISH                     
+       5    38.5%  WISH                      HUNGRY                   
+       4    26.7%  CONFUSED1                 BELIEVE1                 
+       4    33.3%  EXAMPLE                   DEMAND1                  
+       4    25.0%  RESEARCH1                 SECRETARY                
+       3    17.6%  CLOUD1                    CONFUSED1                
+       3    20.0%  DEAF1                     SSHH                     
+       3    25.0%  LATER                     SNORKEL                  
+       3    21.4%  LUNCH1                    NOON1                    
+       3    21.4%  LUNCH1                    SSHH                     
+       3    25.0%  MIRROR                    BEE1                     
+       3    17.6%  MOVIE1                    FOREIGNER1               
+       3    17.6%  NIGHT1                    ACCESS                   
+       3    20.0%  NOON1                     AXE1                     
+       3    25.0%  ONLYONE                   RECENT1                  
+       3    25.0%  RUN1                      ANNOUNCE                 
+       3    25.0%  RUN1                      GIFT                     
+       2    13.3%  AXE1                      LETTUCE1                 
+       2    13.3%  AXE1                      NOON1                    
+       2    16.7%  BASKET1                   BASKETBALL1              
+
+  Saved → data\ASL-Citizen\error_analysis\confused_pairs.csv
+
+[4] Feature inspection for worst classes: ['HUNGRY', 'DRAG1', 'RUN1', 'LUNCH1', 'WISH']
+
+  Gloss                  LHand%   RHand%   Vel Mag  Pos Range Result
+  ----------------------------------------------------------------------
+  HUNGRY                  11.7%    19.1%    0.0288     4.4899  CORRECT (n=4)
+  HUNGRY                   6.4%    28.3%    0.0289     4.6076  WRONG (n=8)
+  DRAG1                   21.4%    37.5%    0.0523     4.7394  CORRECT (n=6)
+  DRAG1                   21.2%    29.8%    0.0453     4.5119  WRONG (n=11)
+  RUN1                    32.8%    33.4%    0.0353     4.6196  CORRECT (n=5)
+  RUN1                    37.9%    35.0%    0.0446     4.6574  WRONG (n=7)
+  LUNCH1                   9.1%    39.1%    0.0427     5.5105  CORRECT (n=6)
+  LUNCH1                  23.4%    20.1%    0.0281     4.2522  WRONG (n=8)
+  WISH                     5.6%    31.2%    0.0245     4.4888  CORRECT (n=7)
+  WISH                     8.3%    26.6%    0.0331     4.4684  WRONG (n=6)
+
+  Saved → data\ASL-Citizen\error_analysis\feature_inspection.csv
+
+[5] Hand detection rate per class (worst 20)...
+
+  Gloss                       LHand%   RHand%      Acc
+  ----------------------------------------------------
+  HUNGRY                        8.2%    25.3%    33.3%
+  DRAG1                        21.2%    32.5%    35.3%
+  RUN1                         35.8%    34.4%    41.7%
+  LUNCH1                       17.3%    28.2%    42.9%
+  TYPE1                        39.5%    35.6%    50.0%
+  MOVIE1                       28.6%    32.8%    52.9%
+  NIGHT1                       29.2%    30.8%    52.9%
+  HURDLE/TRIP1                 34.6%    35.6%    53.8%
+  WISH                          6.9%    29.1%    53.8%
+  THIRD1                       14.2%    22.8%    57.1%
+  EXAMPLE                      40.0%    36.8%    58.3%
+  KITCHEN                      25.5%    31.1%    58.3%
+  MIRROR                       14.2%    27.5%    58.3%
+  SSHH                         13.5%    23.0%    58.3%
+  WRISTWATCH1                  18.4%    34.5%    58.3%
+  CHRISTMAS1                   20.0%    30.2%    58.8%
+  DOG1                         15.6%    23.1%    58.8%
+  CONFUSED1                    35.2%    32.4%    60.0%
+  DEAF1                        18.1%    23.1%    60.0%
+  DINNER1                      24.4%    33.1%    60.0%
+
+  Saved → data\ASL-Citizen\error_analysis\hand_detection_per_class.csv
+
+=================================================================
+  ERROR ANALYSIS SUMMARY
+=================================================================
+  Test accuracy        : 77.25%
+  Classes below 50%    : 4
+  Classes below 70%    : 31
+  Classes at 100%      : 7
+  Top confused pair    : HUNGRY → WISH (8 errors)
+
+  Output files saved to: data\ASL-Citizen\error_analysis
+    confusion_matrix.csv
+    per_class_breakdown.csv
+    confused_pairs.csv
+    feature_inspection.csv
+    hand_detection_per_class.csv
+
+[done] Error analysis complete

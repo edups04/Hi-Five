@@ -1,10 +1,11 @@
 import { useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Camera, Eye, EyeOff, Home as HomeIcon, ListVideo, Lock, LogOut, Menu, Pencil, Phone, PlusCircle, Settings as SettingsIcon, Video, X } from 'lucide-react';
+import { Camera, Eye, EyeOff, Home as HomeIcon, ListVideo, Lock, LogOut, Menu, Pencil, Phone, PlusCircle, Settings as SettingsIcon, Video, X, HelpCircle } from 'lucide-react';
 import logo from '../assets/Hi-five.png';
 import { getData } from '../context/userContext';
 import { settingsCss as css, settingsStyles as s } from '../styles/pages/Settings.styles';
 import { clearTrustedDevice } from './LoginSignup';
+import OnboardingModal from '../components/OnboardingModal';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -59,6 +60,7 @@ function SettingsPage() {
 	const [deleteError, setDeleteError] = useState<string | null>(null);
 	const [newPasswordTouched, setNewPasswordTouched] = useState(false);
 	const [deactivationSuccess, setDeactivationSuccess] = useState(false);
+	const [showOnboarding, setShowOnboarding] = useState(false);
 
 	const currentUser = useMemo<UserProfile | null>(() => {
 		const userRaw = localStorage.getItem('user');
@@ -253,14 +255,24 @@ function SettingsPage() {
 			<input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFileChange} />
 
 			<aside style={s.sidebar} className="settings-sidebar">
-				<div style={s.sidebarTop} className="settings-sidebar-top">
-					<div style={s.mobileTopRow} className="settings-mobile-top-row">
+				<div style={{ ...s.sidebarTop, width: '100%' }} className="settings-sidebar-top">
+					{/* Desktop brand — hidden at ≤980px */}
+					<div style={s.brand} className="settings-brand-desktop">
+						<img src={logo} alt="Hi-Five logo" style={{ width: '60px', height: '90px' }} />
+						<div>
+							<div style={s.brandName}>Hi-Five</div>
+							<div style={s.brandSub}>SIGNING MADE VISIBLE</div>
+						</div>
+					</div>
+
+					{/* Mobile top row — hidden by default, shown at ≤980px */}
+					<div style={{ display: 'none', width: '100%' }} className="settings-mobile-top-row">
 						<div className="settings-mobile-left-group">
-							<button type="button" style={s.mobileMenuBtn} className="settings-mobile-menu-btn" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
+							<button type="button" className="settings-mobile-menu-btn" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu">
 								<Menu size={20} strokeWidth={2} />
 							</button>
 							<div style={s.brand} className="settings-brand">
-								<img src={logo} alt="Hi-Five logo" style={{ width: '60px', height: '90px' }} />
+								<img src={logo} alt="Hi-Five logo" style={{ width: '32px', height: '48px' }} />
 								<div>
 									<div style={s.brandName}>Hi-Five</div>
 									<div style={s.brandSub}>SIGNING MADE VISIBLE</div>
@@ -268,6 +280,7 @@ function SettingsPage() {
 							</div>
 						</div>
 					</div>
+
 					<nav style={s.nav} className="settings-nav">
 						{navItems.map(item => (
 							<button key={item.label} type="button"
@@ -282,6 +295,9 @@ function SettingsPage() {
 					</nav>
 				</div>
 				<div style={s.sidebarBottom} className="settings-sidebar-bottom">
+					<button type="button" style={s.logoutBtn} className="settings-logout-btn" onClick={() => setShowOnboarding(true)}>
+						<HelpCircle size={18} strokeWidth={1.8} /> Help
+					</button>
 					<button type="button" style={s.newRecBtn} className="settings-new-recording-btn" onClick={() => handleNav('/home')}>
 						<PlusCircle size={18} strokeWidth={1.8} /> New Recording
 					</button>
@@ -295,7 +311,7 @@ function SettingsPage() {
 
 			<aside className={`settings-mobile-drawer${mobileMenuOpen ? ' settings-mobile-drawer-open' : ''}`}>
 				<div className="settings-mobile-drawer-top">
-					<button type="button" style={s.mobileMenuBtn} className="settings-mobile-menu-btn" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
+					<button type="button" className="settings-mobile-menu-btn" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
 						<X size={20} strokeWidth={2} />
 					</button>
 				</div>
@@ -312,7 +328,13 @@ function SettingsPage() {
 					))}
 				</nav>
 				<div className="settings-mobile-drawer-bottom">
-					<button type="button" style={{ ...s.logoutBtn, justifyContent: 'flex-start', padding: '11px 14px' }} className="settings-logout-btn" onClick={logout}>
+					<button type="button" style={{ ...s.logoutBtn, justifyContent: 'center', padding: '11px 14px' }} className="settings-logout-btn" onClick={() => setShowOnboarding(true)}>
+						<HelpCircle size={18} strokeWidth={1.8} /> Help
+					</button>
+					<button type="button" style={s.newRecBtn} className="settings-new-recording-btn" onClick={() => { handleNav('/home'); setMobileMenuOpen(false); }}>
+						<PlusCircle size={18} strokeWidth={1.8} /> New Recording
+					</button>
+					<button type="button" style={{ ...s.logoutBtn, justifyContent: 'center', padding: '11px 14px' }} className="settings-logout-btn" onClick={logout}>
 						<LogOut size={18} strokeWidth={1.8} /> Logout
 					</button>
 				</div>
@@ -582,6 +604,12 @@ function SettingsPage() {
 							)}
 						</div>
 					</div>
+				)}
+				{showOnboarding && (
+					<OnboardingModal
+						onClose={() => setShowOnboarding(false)}
+						onComplete={() => setShowOnboarding(false)}
+					/>
 				)}
 		</div>
 	);

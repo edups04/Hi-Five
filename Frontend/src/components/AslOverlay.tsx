@@ -43,6 +43,7 @@ import FK from "../assets/fsl_alphabet/K.png";
 import FL from "../assets/fsl_alphabet/L.png";
 import FM from "../assets/fsl_alphabet/M.png";
 import FN from "../assets/fsl_alphabet/N.png";
+import FNG from "../assets/fsl_alphabet/NG.png";
 import FO from "../assets/fsl_alphabet/O.png";
 import FP from "../assets/fsl_alphabet/P.png";
 import FQ from "../assets/fsl_alphabet/Q.png";
@@ -66,14 +67,21 @@ const ASL_IMAGES: Record<string, string> = {
 
 const FSL_IMAGES: Record<string, string> = {
   A: FA, B: FB, C: FC, D: FD, E: FE, F: FF, G: FG, H: FH,
-  I: FI, J: FJ, K: FK, L: FL, M: FM, N: FN, O: FO, P: FP,
+  I: FI, J: FJ, K: FK, L: FL, M: FM, N: FN, NG: FNG, O: FO, P: FP,
   Q: FQ, R: FR, S: FS, T: FT, U: FU, V: FV, W: FW, X: FX,
   Y: FY, Z: FZ, space: fslSpace, del: fslDel,
 };
 
-const LETTERS = [
+// NG is FSL-only — keep these arrays separate
+const ASL_LETTERS = [
   "A","B","C","D","E","F","G","H","I","J","K","L","M",
   "N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
+  "space", "del",
+];
+
+const FSL_LETTERS = [
+  "A","B","C","D","E","F","G","H","I","J","K","L","M",
+  "N", "NG", "O","P","Q","R","S","T","U","V","W","X","Y","Z",
   "space", "del",
 ];
 
@@ -123,6 +131,7 @@ export default function ASLOverlay({ visible, onClose }: ASLOverlayProps) {
   if (!mounted) return null;
 
   const images = mode === 'asl' ? ASL_IMAGES : FSL_IMAGES;
+  const letters = mode === 'asl' ? ASL_LETTERS : FSL_LETTERS;
   const title = mode === 'asl' ? 'ASL Alphabet' : 'FSL Alphabet';
   const subtitle = mode === 'asl'
     ? 'American Sign Language — Reference guide'
@@ -181,7 +190,7 @@ export default function ASLOverlay({ visible, onClose }: ASLOverlayProps) {
         }
         .asl-grid-wrap::-webkit-scrollbar { width: 4px; }
         .asl-grid-wrap::-webkit-scrollbar-track { background: transparent; }
-        .asl-grid-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; 
+        .asl-grid-wrap::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px;
         }
       `}</style>
 
@@ -237,17 +246,24 @@ export default function ASLOverlay({ visible, onClose }: ASLOverlayProps) {
             className="asl-grid-wrap"
             style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(44px, 1fr))", gap: "8px", overflowY: "auto", maxHeight: "55vh", paddingRight: "4px", opacity: animatingSwitch ? 0 : 1, transition: "opacity 0.18s ease", }}
           >
-            {LETTERS.map((letter, i) => (
+            {(mode === 'asl' ? ASL_LETTERS : FSL_LETTERS).map((letter, i) => (
               <div
                 key={letter}
                 className="asl-letter-card"
                 style={{ animationDelay: `${i * 0.02}s`, padding: "8px 4px", display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", cursor: "default", transition: "transform 0.2s ease" }}
               >
-                <img
-                  src={images[letter]}
-                  alt={`${mode.toUpperCase()} sign for ${letter}`}
-                  style={{ width: "clamp(36px, 8vw, 60px)", height: "clamp(36px, 8vw, 60px)", objectFit: "contain" }}
-                />
+                {/* Fixed-height image container keeps all labels at the same vertical baseline */}
+                <div style={{ width: "clamp(36px, 8vw, 60px)", height: "clamp(36px, 8vw, 60px)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "visible" }}>
+                  <img
+                    src={images[letter]}
+                    alt={`${mode.toUpperCase()} sign for ${letter}`}
+                    style={{
+                      width: letter === "NG" ? "clamp(60px, 12vw, 90px)" : "clamp(36px, 8vw, 60px)",
+                      height: letter === "NG" ? "clamp(60px, 12vw, 90px)" : "clamp(36px, 8vw, 60px)",
+                      objectFit: "contain",
+                    }}
+                  />
+                </div>
                 <span style={{ fontSize: "13px", fontWeight: 700, color: "#ffffff", fontFamily: "'Manrope', sans-serif", letterSpacing: "-0.01em" }}>
                   {letter}
                 </span>

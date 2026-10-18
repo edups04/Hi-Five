@@ -18,16 +18,13 @@ from src.landmarks import HandLandmarkExtractor
 DEFAULT_PORT    = 3001
 DEFAULT_ORIGINS = "http://localhost:5173"
 
-# ── Motion gate config ────────────────────────────────────────────────────────
-MOTION_WINDOW             = 12
-MOTION_THRESHOLD          = 0.05
-HOLD_DURATION             = 0.25
-WORD_COOLDOWN             = 2.0
-MIN_DISPLACEMENT          = 0.0
-WORD_CONFIDENCE_THRESHOLD = 0.70
-FINGERSPELL_WINDOW        = 3.0
-FINGERSPELL_COUNT         = 3
-FINGERSPELL_COOLDOWN      = 2.0
+# ── Fingerspelling (XGBoost) config ───────────────────────────────────────────
+FINGERSPELL_WINDOW = 3.0
+FINGERSPELL_COUNT  = 3
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── TCN config ────────────────────────────────────────────────────────────────
+TCN_CONFIDENCE_THRESHOLD = 0.75
 # ─────────────────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
@@ -39,25 +36,44 @@ origins = [
 ]
 CORS(app, resources={r"/*": {"origins": origins}})
 
-print("[startup] Loading ASL predictor ...")
+# ── XGBoost fingerspelling predictors (letters A-Z) ───────────────────────────
+print("[startup] Loading ASL fingerspelling predictor ...")
 asl_predictor = AslPredictor()
-print("[startup] ASL predictor ready.")
+print("[startup] ASL fingerspelling predictor ready.")
 
-print("[startup] Loading FSL predictor ...")
+print("[startup] Loading FSL fingerspelling predictor ...")
 fsl_predictor = AslPredictor(
     model_path="models/fsl_xgb.json",
     encoder_path="models/fsl_label_encoder.pkl",
 )
-print("[startup] FSL predictor ready.")
+print("[startup] FSL fingerspelling predictor ready.")
 
-# ── Word sign predictor (XGBoost — end pose) ─────────────────────────────────
+# ── Segmented TCN dynamic sign predictor ──────────────────────────────────────
+tcn_predictor  = None
+_tcn_available = False
+
+try:
+    from inference.realtime import SegmentedTCNPredictor
+    if Path("models/fsl_tcn_20.pth").exists():
+        tcn_predictor = SegmentedTCNPredictor(
+            language="fsl20",
+            confidence_threshold=TCN_CONFIDENCE_THRESHOLD,
+        )
+        _tcn_available = True
+        print("[startup] Segmented TCN predictor ready (FSL20).")
+    else:
+        print("[startup] No TCN model found — TCN detection disabled.")
+except Exception as e:
+    print(f"[startup] TCN predictor failed to load: {e}")
+
+# ── XGBoost word sign predictor (legacy fallback) ─────────────────────────────
 word_sign_predictor: AslPredictor | None = None
 word_sign_extractor: HandLandmarkExtractor | None = None
 
 _word_model_path   = Path("models/word_signs_xgb.json")
 _word_encoder_path = Path("models/word_signs_encoder.pkl")
 
-if _word_model_path.exists() and _word_encoder_path.exists():
+if _word_model_path.exists() and _word_encoder_path.exists() and not _tcn_available:
     try:
         word_sign_predictor = AslPredictor(
             model_path=str(_word_model_path),
@@ -65,19 +81,23 @@ if _word_model_path.exists() and _word_encoder_path.exists():
             use_word_features=True,
         )
         word_sign_extractor = word_sign_predictor._extractor
-        print("[startup] Word-sign predictor ready.")
+        print("[startup] XGBoost word-sign predictor ready (fallback).")
     except Exception as e:
-        print(f"[startup] Word-sign predictor failed to load: {e}")
+        print(f"[startup] XGBoost word-sign predictor failed to load: {e}")
 else:
-    print("[startup] No word-sign model found — word detection disabled.")
+    if _tcn_available:
+        print("[startup] Segmented TCN active — XGBoost word-sign predictor skipped.")
+    else:
+        print("[startup] No word-sign model found.")
 
-# ── Per-session motion state ──────────────────────────────────────────────────
-_wrist_history:         deque[tuple[float, float]] = deque(maxlen=MOTION_WINDOW)
-_hold_label:            str   = ""
-_hold_start:            float = 0.0
-_last_word_time:        dict[str, float] = {}
-_recent_letters:        list[float] = []
-_last_fingerspell_time: float = 0.0
+# ── Per-session state ─────────────────────────────────────────────────────────
+_recent_letters: list[float] = []
+
+# Legacy XGBoost word sign state
+_wrist_history:  deque[tuple[float, float]] = deque(maxlen=12)
+_hold_label:     str   = ""
+_hold_start:     float = 0.0
+_last_word_time: dict[str, float] = {}
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -95,24 +115,6 @@ def decode_base64_image(b64: str) -> np.ndarray:
     return np.asarray(img, dtype=np.uint8)
 
 
-def wrist_from_rgb(rgb: np.ndarray) -> tuple[float, float] | None:
-    if word_sign_extractor is None:
-        return None
-    result = word_sign_extractor.extract(rgb)
-    if result is None or not result.found or result.raw_landmarks is None:
-        return None
-    raw = result.raw_landmarks.reshape(21, 3)
-    return float(raw[0, 0]), float(raw[0, 1])
-
-
-def is_hand_moving() -> bool:
-    if len(_wrist_history) < MOTION_WINDOW // 2:
-        return False
-    positions  = np.array(_wrist_history)
-    total_disp = float(np.sum(np.linalg.norm(np.diff(positions, axis=0), axis=1)))
-    return total_disp > MOTION_THRESHOLD
-
-
 def is_fingerspelling() -> bool:
     global _recent_letters
     now = time.time()
@@ -120,48 +122,69 @@ def is_fingerspelling() -> bool:
     return len(_recent_letters) >= FINGERSPELL_COUNT
 
 
-def try_word_sign(rgb: np.ndarray) -> str | None:
-    global _hold_label, _hold_start
+def try_tcn_sign(rgb: np.ndarray) -> str | None:
+    """
+    Push frame to segmented TCN predictor.
+    Returns a sign label only when a complete sign is detected
+    (hand moved then went still), otherwise None.
+    """
+    if tcn_predictor is None:
+        return None
+
+    result = tcn_predictor.push_frame(rgb)
+
+    if "label" not in result:
+        return None
+
+    if result.get("is_unknown", True):
+        return None
+
+    return result["label"]
+
+
+def try_word_sign_xgb(rgb: np.ndarray) -> str | None:
+    """Legacy XGBoost word sign detection (used when TCN not available)."""
+    global _hold_label, _hold_start, _wrist_history
 
     if word_sign_predictor is None:
         return None
 
-    if not is_hand_moving():
+    if word_sign_extractor:
+        result = word_sign_extractor.extract(rgb)
+        if result and result.found and result.raw_landmarks is not None:
+            raw   = result.raw_landmarks.reshape(21, 3)
+            wrist = (float(raw[0, 0]), float(raw[0, 1]))
+            _wrist_history.append(wrist)
+
+    if len(_wrist_history) < 6:
+        return None
+
+    positions  = np.array(_wrist_history)
+    total_disp = float(np.sum(np.linalg.norm(np.diff(positions, axis=0), axis=1)))
+    if total_disp <= 0.05:
         _hold_label = ""
         _hold_start = 0.0
         return None
 
     pred = word_sign_predictor.predict_from_rgb(rgb)
-    if not pred.hand_detected or pred.label == "nothing":
-        _hold_label = ""
-        _hold_start = 0.0
-        return None
-
-    if pred.confidence < WORD_CONFIDENCE_THRESHOLD:
+    if not pred.hand_detected or pred.label == "nothing" or pred.confidence < 0.70:
         _hold_label = ""
         _hold_start = 0.0
         return None
 
     candidate = pred.label
-    now = time.time()
+    now       = time.time()
 
     if candidate != _hold_label:
         _hold_label = candidate
         _hold_start = now
         return None
 
-    held = now - _hold_start
-
-    held = now - _hold_start
-    if held > 1000:
-        _hold_start = now
-        return None
-
-    if held < HOLD_DURATION:
+    if now - _hold_start < 0.25:
         return None
 
     last_fired = _last_word_time.get(candidate, 0.0)
-    if now - last_fired < WORD_COOLDOWN:
+    if now - last_fired < 2.0:
         return None
 
     _last_word_time[candidate] = now
@@ -172,13 +195,38 @@ def try_word_sign(rgb: np.ndarray) -> str | None:
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok"}), 200
+    return jsonify({
+        "status":        "ok",
+        "tcn_available": _tcn_available,
+        "tcn_language":  tcn_predictor.language if tcn_predictor else None,
+        "tcn_mode":      "segmented",
+    }), 200
+
+
+@app.route("/switch_language", methods=["POST"])
+def switch_language():
+    """Switch the TCN model between ASL and FSL at runtime."""
+    if tcn_predictor is None:
+        return jsonify({"error": "TCN not available"}), 503
+
+    payload  = request.get_json(silent=True) or {}
+    language = payload.get("language", "asl")
+
+    if language not in ("fsl20",):
+        return jsonify({"error": "language must be 'fsl20'"}), 400
+
+    try:
+        tcn_predictor.switch_language(language)
+        return jsonify({
+            "status":   "ok",
+            "language": tcn_predictor.language,
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    global _wrist_history
-
     payload = request.get_json(silent=True) or {}
 
     if "image" not in payload:
@@ -189,14 +237,37 @@ def predict():
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
 
-    mode = payload.get("mode", "asl")
+    mode           = payload.get("mode", "asl")
+    detection_mode = payload.get("detection_mode", "alphabet")
 
-    wrist = wrist_from_rgb(rgb)
-    if wrist:
-        _wrist_history.append(wrist)
+    # ── Words mode: TCN / word signs only, skip fingerspelling ────────────────
+    if detection_mode == "words":
+        dynamic_sign = None
 
-    word = try_word_sign(rgb)
+        if _tcn_available:
+            dynamic_sign = try_tcn_sign(rgb)
+        elif word_sign_predictor is not None:
+            dynamic_sign = try_word_sign_xgb(rgb)
 
+        if dynamic_sign is not None:
+            return jsonify({
+                "label":         dynamic_sign,
+                "confidence":    1.0,
+                "hand_detected": True,
+                "hand_count":    1,
+                "is_word_sign":  True,
+            }), 200
+
+        # Still collecting — return empty result
+        return jsonify({
+            "label":         "...",
+            "confidence":    0.0,
+            "hand_detected": False,
+            "hand_count":    0,
+            "is_word_sign":  False,
+        }), 200
+
+    # ── Alphabet mode: XGBoost fingerspelling only ────────────────────────────
     if mode == "fsl":
         letter_result = fsl_predictor.predict_from_rgb(rgb)
     elif mode == "both":
@@ -206,16 +277,10 @@ def predict():
     else:
         letter_result = asl_predictor.predict_from_rgb(rgb)
 
-    if word is not None and not is_fingerspelling():
-        return jsonify({
-            "label":         word,
-            "confidence":    1.0,
-            "hand_detected": True,
-            "hand_count":    1,
-            "is_word_sign":  True,
-        }), 200
-
-    if (letter_result.hand_detected and
+    # Track fingerspelling activity (for future use / logging)
+    tcn_is_idle = (not _tcn_available) or (tcn_predictor.state == "WAITING")
+    if (tcn_is_idle and
+            letter_result.hand_detected and
             letter_result.label != "nothing" and
             letter_result.confidence > 0.7):
         _recent_letters.append(time.time())
@@ -223,6 +288,17 @@ def predict():
     result = letter_result.to_dict()
     result["is_word_sign"] = False
     return jsonify(result), 200
+
+
+@app.route("/tcn_state", methods=["GET"])
+def tcn_state():
+    """Returns the current segmentation state (waiting/signing) for UI feedback."""
+    if tcn_predictor is None:
+        return jsonify({"error": "TCN not available"}), 503
+    return jsonify({
+        "state":       tcn_predictor.state,
+        "frame_count": tcn_predictor.sign_frame_count,
+    }), 200
 
 
 if __name__ == "__main__":

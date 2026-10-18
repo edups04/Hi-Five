@@ -12,11 +12,13 @@ const recordingsRouter = require('./Routes/recordings');
 const adminRouter = require('./Routes/admin');
 const { writeLog } = require('./middleware/auditLogger');
 const speakeasy = require('speakeasy');
+const compression = require('compression');
 
 const { Resend } = require('resend');
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const app = express();
+app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(cors());
 app.use('/api/recordings', recordingsRouter);
@@ -173,6 +175,13 @@ app.post('/signup', async (req, res) => {
 
     const existingUsername = await UsersModel.findOne({ username });
     if (existingUsername) return res.status(400).json({ success: false, message: "This username is already taken. Please choose another." });
+
+    const deactivatedWithEmail = await UsersModel.findOne({ email, deactivated: true });
+    if (deactivatedWithEmail) {
+        await UsersModel.findByIdAndUpdate(deactivatedWithEmail._id, {
+            email: `deactivated_${deactivatedWithEmail._id}@deactivated`
+        });
+    }
 
     bcrypt.hash(password, 10)
     .then(hash => {

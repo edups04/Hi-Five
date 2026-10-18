@@ -4,6 +4,7 @@ import {
   recordingModalStyles as s,
   recordingModalCss as css,
 } from "../styles/pages/RecordingPreview.styles";
+import { CustomVideoPlayer, customPlayerCss } from "../components/CustomVideoPlayer";
 
 export interface RecordingPreviewModalProps {
   blob: Blob | null;
@@ -55,6 +56,7 @@ export function RecordingPreviewModal(props: RecordingPreviewModalProps) {
   return (
     <div style={s.backdrop} role="dialog" aria-modal="true" aria-labelledby="asl-modal-title">
       <style>{css}</style>
+      <style>{customPlayerCss}</style>
       <div style={s.card} className="asl-modal-card">
         <div style={s.header}>
           <h2 id="asl-modal-title" style={s.title} className="asl-modal-title">
@@ -67,13 +69,10 @@ export function RecordingPreviewModal(props: RecordingPreviewModalProps) {
 
         <div style={s.videoWrap}>
           {blobUrl && (
-            <video
+            <CustomVideoPlayer
               key={blobUrl}
               src={blobUrl}
-              style={s.video}
-              controls
-              playsInline
-              preload="metadata"
+              borderRadius={12}
             />
           )}
         </div>

@@ -4,6 +4,8 @@ export interface Prediction {
   hand_detected: boolean;
   hand_count: number;
   is_word_sign?: boolean;
+  /** True while the server is still accumulating frames for the current sign. */
+  collecting?: boolean;
 }
 
 export type SignMode = "asl" | "fsl" | "both";
@@ -13,6 +15,15 @@ const API_URL =
   (import.meta.env.VITE_ASL_API_URL as string | undefined) ??
   "http://localhost:3001";
 
+// Aborting a slow request does NOT stop the server from processing that frame —
+// it only throws away the answer. In words mode the frame has already entered
+// the TCN buffer, so a short timeout just blinds the client to a sign it already
+// paid for. Give the server room on a shared-CPU host.
+const TIMEOUT_MS: Record<DetectionMode, number> = {
+  alphabet: 2500,
+  words:    8000,
+};
+
 export async function predictFrame(
   imageDataUrl: string,
   signal?: AbortSignal,
@@ -20,7 +31,7 @@ export async function predictFrame(
   detectionMode: DetectionMode = "alphabet",
 ): Promise<Prediction | null> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 2000);
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS[detectionMode]);
 
   if (signal) {
     if (signal.aborted) {
@@ -53,6 +64,21 @@ export async function predictFrame(
     return null;
   } finally {
     clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Clear the server-side TCN frame buffer.
+ * Call this when a camera session starts so the first sign isn't classified
+ * against frames left over from the previous session.
+ */
+export async function resetDynamicState(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/reset`, { method: "POST" });
+    return res.ok;
+  } catch (err) {
+    console.warn("[aslClient] /reset failed:", err);
+    return false;
   }
 }
 

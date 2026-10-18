@@ -19,3 +19,5 @@ flask-cors>=4.0.0
 
 # CLI niceties
 tqdm>=4.65.0
+
+gunicorn==23.0.0

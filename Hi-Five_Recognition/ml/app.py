@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import io
 import os
+import threading
 import time
 from collections import deque
 from pathlib import Path
@@ -98,6 +99,14 @@ _wrist_history:  deque[tuple[float, float]] = deque(maxlen=12)
 _hold_label:     str   = ""
 _hold_start:     float = 0.0
 _last_word_time: dict[str, float] = {}
+
+# ── Concurrency guard ─────────────────────────────────────────────────────────
+# The TCN predictor (and the legacy word-sign path) hold mutable sequence state:
+# a frame buffer and a motion state machine. Flask serves requests on multiple
+# threads, so without this lock two in-flight frames can interleave inside
+# push_frame() and corrupt the buffer. That is invisible on localhost (requests
+# finish before the next one starts) but constant under real network latency.
+_dynamic_lock = threading.Lock()
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -122,6 +131,32 @@ def is_fingerspelling() -> bool:
     return len(_recent_letters) >= FINGERSPELL_COUNT
 
 
+def reset_dynamic_state() -> None:
+    """
+    Clear the TCN frame buffer and the legacy word-sign state.
+
+    Call this when a client starts a new camera session, otherwise the buffer
+    still holds frames from whoever used it last and the first sign of the new
+    session gets classified against stale motion history.
+    """
+    global _hold_label, _hold_start
+
+    with _dynamic_lock:
+        if tcn_predictor is not None:
+            for name in ("reset", "clear", "reset_state"):
+                fn = getattr(tcn_predictor, name, None)
+                if callable(fn):
+                    try:
+                        fn()
+                    except Exception as e:
+                        print(f"[reset] tcn_predictor.{name}() failed: {e}")
+                    break
+
+        _wrist_history.clear()
+        _hold_label = ""
+        _hold_start = 0.0
+
+
 def try_tcn_sign(rgb: np.ndarray) -> str | None:
     """
     Push frame to segmented TCN predictor.
@@ -131,7 +166,9 @@ def try_tcn_sign(rgb: np.ndarray) -> str | None:
     if tcn_predictor is None:
         return None
 
-    result = tcn_predictor.push_frame(rgb)
+    # Serialised: frames must enter the buffer one at a time, in arrival order.
+    with _dynamic_lock:
+        result = tcn_predictor.push_frame(rgb)
 
     if "label" not in result:
         return None
@@ -149,48 +186,49 @@ def try_word_sign_xgb(rgb: np.ndarray) -> str | None:
     if word_sign_predictor is None:
         return None
 
-    if word_sign_extractor:
-        result = word_sign_extractor.extract(rgb)
-        if result and result.found and result.raw_landmarks is not None:
-            raw   = result.raw_landmarks.reshape(21, 3)
-            wrist = (float(raw[0, 0]), float(raw[0, 1]))
-            _wrist_history.append(wrist)
+    with _dynamic_lock:
+        if word_sign_extractor:
+            result = word_sign_extractor.extract(rgb)
+            if result and result.found and result.raw_landmarks is not None:
+                raw   = result.raw_landmarks.reshape(21, 3)
+                wrist = (float(raw[0, 0]), float(raw[0, 1]))
+                _wrist_history.append(wrist)
 
-    if len(_wrist_history) < 6:
-        return None
+        if len(_wrist_history) < 6:
+            return None
 
-    positions  = np.array(_wrist_history)
-    total_disp = float(np.sum(np.linalg.norm(np.diff(positions, axis=0), axis=1)))
-    if total_disp <= 0.05:
+        positions  = np.array(_wrist_history)
+        total_disp = float(np.sum(np.linalg.norm(np.diff(positions, axis=0), axis=1)))
+        if total_disp <= 0.05:
+            _hold_label = ""
+            _hold_start = 0.0
+            return None
+
+        pred = word_sign_predictor.predict_from_rgb(rgb)
+        if not pred.hand_detected or pred.label == "nothing" or pred.confidence < 0.70:
+            _hold_label = ""
+            _hold_start = 0.0
+            return None
+
+        candidate = pred.label
+        now       = time.time()
+
+        if candidate != _hold_label:
+            _hold_label = candidate
+            _hold_start = now
+            return None
+
+        if now - _hold_start < 0.25:
+            return None
+
+        last_fired = _last_word_time.get(candidate, 0.0)
+        if now - last_fired < 2.0:
+            return None
+
+        _last_word_time[candidate] = now
         _hold_label = ""
         _hold_start = 0.0
-        return None
-
-    pred = word_sign_predictor.predict_from_rgb(rgb)
-    if not pred.hand_detected or pred.label == "nothing" or pred.confidence < 0.70:
-        _hold_label = ""
-        _hold_start = 0.0
-        return None
-
-    candidate = pred.label
-    now       = time.time()
-
-    if candidate != _hold_label:
-        _hold_label = candidate
-        _hold_start = now
-        return None
-
-    if now - _hold_start < 0.25:
-        return None
-
-    last_fired = _last_word_time.get(candidate, 0.0)
-    if now - last_fired < 2.0:
-        return None
-
-    _last_word_time[candidate] = now
-    _hold_label = ""
-    _hold_start = 0.0
-    return candidate
+        return candidate
 
 
 @app.route("/health", methods=["GET"])
@@ -201,6 +239,13 @@ def health():
         "tcn_language":  tcn_predictor.language if tcn_predictor else None,
         "tcn_mode":      "segmented",
     }), 200
+
+
+@app.route("/reset", methods=["POST"])
+def reset():
+    """Clear dynamic-sign state. Called by the client when a session starts."""
+    reset_dynamic_state()
+    return jsonify({"status": "ok"}), 200
 
 
 @app.route("/switch_language", methods=["POST"])
@@ -216,7 +261,8 @@ def switch_language():
         return jsonify({"error": "language must be 'fsl20'"}), 400
 
     try:
-        tcn_predictor.switch_language(language)
+        with _dynamic_lock:
+            tcn_predictor.switch_language(language)
         return jsonify({
             "status":   "ok",
             "language": tcn_predictor.language,
@@ -256,15 +302,19 @@ def predict():
                 "hand_detected": True,
                 "hand_count":    1,
                 "is_word_sign":  True,
+                "collecting":    False,
             }), 200
 
-        # Still collecting — return empty result
+        # Still collecting — return empty result.
+        # "collecting" tells the client this is not a prediction, so it must not
+        # be fed into the sentence builder.
         return jsonify({
             "label":         "...",
             "confidence":    0.0,
             "hand_detected": False,
             "hand_count":    0,
             "is_word_sign":  False,
+            "collecting":    True,
         }), 200
 
     # ── Alphabet mode: XGBoost fingerspelling only ────────────────────────────
@@ -287,6 +337,7 @@ def predict():
 
     result = letter_result.to_dict()
     result["is_word_sign"] = False
+    result["collecting"]   = False
     return jsonify(result), 200
 
 

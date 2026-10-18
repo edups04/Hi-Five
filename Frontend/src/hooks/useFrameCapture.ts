@@ -18,7 +18,7 @@ export interface UseFrameCaptureResult {
   appendSpace: () => void;
 }
 
-const DEFAULT_FPS = 8;
+const DEFAULT_FPS = 12;
 const DEFAULT_JPEG_QUALITY = 0.78;
 
 export function useFrameCapture(
@@ -106,12 +106,12 @@ export function useFrameCapture(
       setLiveFps(avg > 0 ? 1000 / avg : 0);
 
       // Adaptive FPS — slow down when connection is slow
-      if (avg > 200 && intervalRef.current) {
+      if (avg > 300 && intervalRef.current) {
         clearInterval(intervalRef.current);
-        intervalRef.current = setInterval(captureAndPredict, Math.round(1000 / 4));
-      } else if (avg < 80 && intervalRef.current) {
+        intervalRef.current = setInterval(captureAndPredict, Math.round(1000 / 5));
+      } else if (avg < 100 && intervalRef.current) {
         clearInterval(intervalRef.current);
-        intervalRef.current = setInterval(captureAndPredict, Math.round(1000 / 8));
+        intervalRef.current = setInterval(captureAndPredict, Math.round(1000 / 12));
       }
         })
         .catch(() => {})

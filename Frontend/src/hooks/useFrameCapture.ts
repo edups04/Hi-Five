@@ -41,6 +41,15 @@ const ALPHABET_MAX_PENDING = 3;
  */
 const MAX_BUFFERED_FRAMES = 24;
 
+/**
+ * How long a recognised word stays on screen before the display is free again.
+ *
+ * Between signs the server replies "still collecting" several times a second.
+ * Without this hold those replies overwrite the word the moment it appears, so
+ * the result flashes and vanishes before it can be read.
+ */
+const WORD_DISPLAY_HOLD_MS = 2500;
+
 export function useFrameCapture(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   isActive: boolean,
@@ -117,9 +126,10 @@ export function useFrameCapture(
       if ((prediction.hand_count ?? 0) > 1) return;
 
       // Server is still accumulating frames for the current sign — a status
-      // ping, not a prediction. Never feed it to the builder.
+      // ping, not a prediction. Never feed it to the builder, and don't let it
+      // wipe a word that was just recognised.
       if (prediction.collecting) {
-        setLastPrediction(prediction);
+        if (!wordLockRef.current) setLastPrediction(prediction);
         return;
       }
 
@@ -128,12 +138,13 @@ export function useFrameCapture(
         setLastPrediction(prediction);
         setSentence(builder.sentence);
 
-        // Lock display briefly so letters don't override the word
+        // Hold the word on screen so neither letters nor "still collecting"
+        // pings can replace it before it has been read.
         wordLockRef.current = true;
         if (wordLockTimer.current) clearTimeout(wordLockTimer.current);
         wordLockTimer.current = setTimeout(() => {
           wordLockRef.current = false;
-        }, 2000);
+        }, WORD_DISPLAY_HOLD_MS);
 
       } else if (!isWords && !wordLockRef.current) {
         // Letters only ever enter the sentence in alphabet mode.

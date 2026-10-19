@@ -166,9 +166,23 @@ def try_tcn_sign(rgb: np.ndarray) -> str | None:
     if tcn_predictor is None:
         return None
 
-    # Serialised: frames must enter the buffer one at a time, in arrival order.
     with _dynamic_lock:
         result = tcn_predictor.push_frame(rgb)
+
+    # Log every completed attempt, including ones that get discarded.
+    # raw_label is the model's top pick regardless of the confidence cut-off,
+    # so a correct raw_label with low confidence means a different problem
+    # from a wrong raw_label with high confidence.
+    if "label" in result or result.get("skipped"):
+        print(
+            f"[tcn] frames={result.get('n_frames', result.get('frames'))} "
+            f"raw={result.get('raw_label')} "
+            f"conf={result.get('confidence')} "
+            f"unknown={result.get('is_unknown')} "
+            f"skipped={result.get('skipped', False)} "
+            f"{result.get('reason', '')}",
+            flush=True,
+        )
 
     if "label" not in result:
         return None

@@ -26,6 +26,11 @@ FINGERSPELL_COUNT  = 3
 
 # ── TCN config ────────────────────────────────────────────────────────────────
 TCN_CONFIDENCE_THRESHOLD = 0.60
+
+# Safety cap on how many frames one /predict_batch request may carry. The client
+# should never send more than ~2 seconds' worth; anything beyond this means the
+# client fell badly behind, and the oldest frames are the least useful.
+MAX_BATCH_FRAMES = 32
 # ─────────────────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
@@ -157,22 +162,14 @@ def reset_dynamic_state() -> None:
         _hold_start = 0.0
 
 
-def try_tcn_sign(rgb: np.ndarray) -> str | None:
+def _log_tcn(result: dict) -> None:
     """
-    Push frame to segmented TCN predictor.
-    Returns a sign label only when a complete sign is detected
-    (hand moved then went still), otherwise None.
+    Print what the TCN actually decided, including attempts that get discarded.
+
+    raw_label is the model's top pick regardless of the confidence cut-off, so a
+    correct raw_label sitting below the threshold is a different problem from a
+    wrong raw_label with high confidence.
     """
-    if tcn_predictor is None:
-        return None
-
-    with _dynamic_lock:
-        result = tcn_predictor.push_frame(rgb)
-
-    # Log every completed attempt, including ones that get discarded.
-    # raw_label is the model's top pick regardless of the confidence cut-off,
-    # so a correct raw_label with low confidence means a different problem
-    # from a wrong raw_label with high confidence.
     if "label" in result or result.get("skipped"):
         print(
             f"[tcn] frames={result.get('n_frames', result.get('frames'))} "
@@ -184,13 +181,32 @@ def try_tcn_sign(rgb: np.ndarray) -> str | None:
             flush=True,
         )
 
-    if "label" not in result:
+
+def _push_tcn_frames_locked(frames: list[np.ndarray]) -> str | None:
+    """
+    Push consecutive frames into the TCN in order. Caller MUST hold _dynamic_lock.
+
+    Returns the first confident sign found in this run of frames, or None.
+    """
+    detected: str | None = None
+
+    for rgb in frames:
+        result = tcn_predictor.push_frame(rgb)
+        _log_tcn(result)
+
+        if detected is None and "label" in result and not result.get("is_unknown", True):
+            detected = result["label"]
+
+    return detected
+
+
+def try_tcn_sign(rgb: np.ndarray) -> str | None:
+    """Single-frame TCN push (used by the non-batched /predict route)."""
+    if tcn_predictor is None:
         return None
 
-    if result.get("is_unknown", True):
-        return None
-
-    return result["label"]
+    with _dynamic_lock:
+        return _push_tcn_frames_locked([rgb])
 
 
 def try_word_sign_xgb(rgb: np.ndarray) -> str | None:
@@ -245,6 +261,30 @@ def try_word_sign_xgb(rgb: np.ndarray) -> str | None:
         return candidate
 
 
+def _word_sign_response(label: str):
+    return jsonify({
+        "label":         label,
+        "confidence":    1.0,
+        "hand_detected": True,
+        "hand_count":    1,
+        "is_word_sign":  True,
+        "collecting":    False,
+    }), 200
+
+
+def _collecting_response():
+    # "collecting" tells the client this is not a prediction, so it must not be
+    # fed into the sentence builder.
+    return jsonify({
+        "label":         "...",
+        "confidence":    0.0,
+        "hand_detected": False,
+        "hand_count":    0,
+        "is_word_sign":  False,
+        "collecting":    True,
+    }), 200
+
+
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({
@@ -252,6 +292,7 @@ def health():
         "tcn_available": _tcn_available,
         "tcn_language":  tcn_predictor.language if tcn_predictor else None,
         "tcn_mode":      "segmented",
+        "batch":         True,
     }), 200
 
 
@@ -285,6 +326,54 @@ def switch_language():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/predict_batch", methods=["POST"])
+def predict_batch():
+    """
+    Accept several consecutive frames in one request.
+
+    The client captures at a steady rate into a local buffer and ships whatever
+    has accumulated whenever the previous request returns. That keeps the TCN fed
+    at capture rate however slow the round trip is: latency then changes how often
+    answers come back, not what the movement looks like to the model.
+
+    Sending one frame per request instead ties the effective frame rate to
+    1 / round-trip-time, which starves the segmenter and forces the signer to
+    move unnaturally slowly.
+    """
+    payload = request.get_json(silent=True) or {}
+    images  = payload.get("images")
+
+    if not isinstance(images, list) or not images:
+        return jsonify({"error": "Missing 'images' array"}), 400
+
+    if not _tcn_available or tcn_predictor is None:
+        return jsonify({"error": "TCN not available"}), 503
+
+    # Keep the newest frames if the client fell behind.
+    if len(images) > MAX_BATCH_FRAMES:
+        print(
+            f"[batch] client sent {len(images)} frames, keeping newest "
+            f"{MAX_BATCH_FRAMES} — server is not keeping up",
+            flush=True,
+        )
+        images = images[-MAX_BATCH_FRAMES:]
+
+    try:
+        frames = [decode_base64_image(b64) for b64 in images]
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    # One lock acquisition for the whole batch: these frames are consecutive, so
+    # nothing may interleave between them.
+    with _dynamic_lock:
+        detected = _push_tcn_frames_locked(frames)
+
+    if detected is not None:
+        return _word_sign_response(detected)
+
+    return _collecting_response()
+
+
 @app.route("/predict", methods=["POST"])
 def predict():
     payload = request.get_json(silent=True) or {}
@@ -310,26 +399,9 @@ def predict():
             dynamic_sign = try_word_sign_xgb(rgb)
 
         if dynamic_sign is not None:
-            return jsonify({
-                "label":         dynamic_sign,
-                "confidence":    1.0,
-                "hand_detected": True,
-                "hand_count":    1,
-                "is_word_sign":  True,
-                "collecting":    False,
-            }), 200
+            return _word_sign_response(dynamic_sign)
 
-        # Still collecting — return empty result.
-        # "collecting" tells the client this is not a prediction, so it must not
-        # be fed into the sentence builder.
-        return jsonify({
-            "label":         "...",
-            "confidence":    0.0,
-            "hand_detected": False,
-            "hand_count":    0,
-            "is_word_sign":  False,
-            "collecting":    True,
-        }), 200
+        return _collecting_response()
 
     # ── Alphabet mode: XGBoost fingerspelling only ────────────────────────────
     if mode == "fsl":

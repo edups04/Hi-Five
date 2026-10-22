@@ -33,7 +33,7 @@ function Home() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
-  const [signMode, setSignMode] = useState<SignMode>('fsl');
+  const [signMode, setSignMode] = useState<SignMode>('both');
   const [detectionMode, setDetectionMode] = useState<DetectionMode>('alphabet');
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
